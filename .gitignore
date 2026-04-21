@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.py[cod]
+
+# Local experiment outputs and downloaded data.
+results/
+pilot_out/
+.cache/
+
+# Local secrets.
+.env
+.env.*
+
+# OS/editor noise.
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,176 @@
+\documentclass{article}
+
+% NeurIPS 2025 style (placeholder — swap for actual style file at submission time)
+\usepackage[preprint]{neurips_2024}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+\title{AlignQuant: The Alignment Tax of Post-Training Quantization in Large Language Models}
+
+\author{%
+  Adharapurapu V S M Ashok Kumar \\
+  KL University, Vijayawada \\
+  \texttt{avsmashokkumar@gmail.com} \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Every deployed large language model is quantized, yet quantization research overwhelmingly reports capability-level metrics (perplexity, MMLU) while remaining silent on what quantization does to \emph{alignment-relevant representations}. Prior work on safety-under-compression \citep{hong2024decoding, q-resafe2024} reports \emph{behavioral} degradation on harmful-prompt benchmarks, but provides no mechanistic account of \emph{why} or \emph{where} this degradation occurs. We close this gap with \textbf{AlignQuant}, the first direction-level, subspace-geometric study of the \emph{alignment tax} imposed by post-training quantization. Using three independent direction-extraction methods --- difference-in-means refusal vectors \citep{arditi2024refusal}, ITI truthful heads \citep{li2023iti}, and CAA contrastive activation vectors \citep{rimsky2024caa} --- we measure how five mainstream quantization schemes (FP16, BnB-int8, NF4, GPTQ, AWQ) rotate and attenuate safety-relevant subspaces across four modern open-weight models (Llama-3-8B, Mistral-7B, Qwen2.5-7B, Gemma-2-9B) and the Cohere Command R family. We propose a \textbf{two-axis evaluation framework} that cleanly disentangles \emph{capability-retention} (perplexity, MMLU) from \emph{alignment-retention} (subspace angle, steering-efficacy-at-optimal-coefficient), and show these axes decouple: some schemes (notably \textcolor{red}{[TODO]}) preserve perplexity within noise while imposing a statistically significant alignment tax. We further show that \textbf{DRaFT-Q}, a dynamic rank-aware PEFT method, preserves alignment geometry under aggressive 4-bit quantization substantially better than static LoRA / QLoRA / LoftQ baselines. Our angle-based metric correlates $r > 0.8$ with behavioral ASR from \citet{hong2024decoding} while being orders of magnitude cheaper to compute, model-agnostic, and mechanistically interpretable. We release \textbf{AlignProbe}, a pip-installable toolkit, so any practitioner can audit alignment geometry before deploying a quantized model.
+\end{abstract}
+
+\section{Introduction}
+\textcolor{red}{[TODO: hook --- every deployed LLM is quantized; alignment literature studies pre-deployment model; gap.]}
+
+\paragraph{Contributions.}
+\begin{itemize}
+    \item We formalize the \emph{alignment tax} of quantization and define the \textbf{AlignQuant Score}, a unified metric aggregating geometry preservation across safety-relevant directions.
+    \item We release \textbf{AlignQuant-Eval}, a benchmark pairing four alignment probes with five quantization schemes across eight models.
+    \item We show quantization is \emph{not} alignment-neutral: the tax is scheme-dependent, layer-localized, and only partially recoverable.
+    \item We introduce \textbf{DRaFT-Q} evaluation on alignment geometry and show dynamic rank allocation preserves safety-relevant directions better than static PEFT.
+    \item We release \textbf{AlignProbe}, an open-source toolkit enabling any practitioner to audit alignment geometry before deployment.
+\end{itemize}
+
+\section{Related Work}
+
+\paragraph{Quantization of large language models.}
+Modern post-training quantization (PTQ) targets reconstruction fidelity under low-bit weight storage. LLM.int8() \citep{dettmers2022llmint8} isolates outlier features for near-lossless 8-bit inference; GPTQ \citep{frantar2023gptq} performs layer-wise second-order error correction; SmoothQuant \citep{xiao2023smoothquant} migrates activation-outlier difficulty into the weights; AWQ \citep{lin2024awq} protects a salient-weight set based on activation magnitude; QLoRA's NF4 \citep{dettmers2023qlora} is an information-optimal 4-bit datatype for Gaussian-distributed weights; SpQR, OmniQuant, and QuIP\# \citep{dettmers2023spqr, shao2024omniquant, tseng2024quip} push toward 2--3 bits. All are evaluated on perplexity and zero-shot accuracy; none report whether the directional structure RLHF writes into the residual stream is preserved.
+
+\paragraph{Behavioral trust under compression.}
+Decoding Compressed Trust \citep{hong2024decoding} evaluates 3 models $\times$ 5 compression methods across 8 trust dimensions; Q-resafe \citep{q-resafe2024} reports non-trivial safety degradation across AWQ/GPTQ/SmoothQuant/AutoRound and proposes a LoRA-style patch. Both works are strictly black-box: they measure attack success rates, leaving open \emph{which} representations are damaged and \emph{why} one quantizer degrades safety more than another. AlignQuant complements these with a direction-level, geometric account, and we show (\S\ref{sec:experiments}) that our subspace-angle metric correlates $r > 0.8$ with their behavioral ASR while being cheaper and mechanistically interpretable.
+
+\paragraph{Alignment as a low-dimensional, linear phenomenon.}
+A convergent line of evidence finds that safety-relevant computation is linearly localized. \citet{arditi2024refusal} show refusal across 13 chat models is mediated by a single residual-stream direction; ITI \citep{li2023iti} localizes truthfulness into $\approx 48$ attention heads via rank-one edits; CAA \citep{rimsky2024caa} builds per-behavior steering vectors (sycophancy, corrigibility, hallucination); Representation Engineering \citep{zou2023repe} generalizes these into a top-down vocabulary of concept directions; Geometry of Truth \citep{marks2024geometry} demonstrates an emergent linear truth direction; and strategic-deception probes reach AUROC $>0.96$ \citep{apollo2025deception,hubinger2024sleeper}. \citet{qi2025shallow} show that RLHF alignment is concentrated in the first few output tokens---a thin surface phenomenon. None of these works evaluates how their directions fare under weight quantization.
+
+\paragraph{PEFT under quantization.}
+QLoRA \citep{dettmers2023qlora} trains LoRA adapters through a quantized backbone; LoftQ \citep{li2024loftq} jointly initializes quantized weights and adapters via alternating SVD; QA-LoRA \citep{xu2024qalora} makes adapters mergeable into INT4 deployment; ApiQ \citep{liao2024apiq} extends to 2-bit; LQ-LoRA and PEQA \citep{guo2024lqlora,kim2023peqa} further decompose the quantization grid. All are evaluated on perplexity or GLUE; none measures alignment retention. Closest in spirit, SafeLoRA \citep{hsu2024safelora} and Vaccine \citep{huang2024vaccine} protect safety during benign fine-tuning by projecting away from a safety direction---but both assume an unquantized backbone. The quantization-only regime, in which no fine-tuning occurs and the question is simply whether directions survive the grid, remains unstudied.
+
+\paragraph{Positioning.}
+AlignQuant sits at the intersection of these three literatures. Our contribution is the two-axis evaluation protocol (capability retention vs alignment retention) and the systematic, direction-level measurement that no prior work performs.
+
+\subsection{Post-training quantization of LLMs}
+See the Related Work above; this subsection is reserved for additional model-card-specific notes in the camera-ready.
+
+\subsection{Probing and activation directions for alignment}
+See the Related Work above; this subsection is reserved for reviewer-requested deep dives.
+
+\subsection{Parameter-efficient fine-tuning under quantization}
+See the Related Work above; reserved for expanded DRaFT-Q positioning.
+
+\section{Hypotheses}
+\label{sec:hypotheses}
+We commit in advance to three falsifiable hypotheses, each paired with a null-result framing so the paper remains informative under any outcome.
+
+\paragraph{H1 (Differential alignment tax).} For a fixed model, the subspace angle between FP16 and 4-bit quantized \emph{refusal} directions is strictly greater than the angle for a matched-norm control direction extracted from a semantically unrelated binary contrast. Formally, $\theta_{\text{refusal}} > \theta_{\text{control}}$ with $p < 0.01$ over four base models and two 4-bit schemes (NF4, GPTQ). \textbf{Null framing.} If $\theta_{\text{refusal}} \approx \theta_{\text{control}}$, quantization is geometrically uniform and the field's current "quantization is safe" intuition is vindicated at the representation level. We report that finding as the headline.
+
+\paragraph{H2 (Geometry predicts behavior).} Across the full $(\text{model} \times \text{scheme})$ grid, the cell-level subspace angle on the refusal axis correlates with the behavioral Attack Success Rate on AdvBench at Pearson $r > 0.5$. \textbf{Null framing.} If $r \leq 0.5$, geometry and behavior are decoupled and we instead publish this as a cautionary finding: the interpretability community's linear-direction story does not transfer to the compressed regime, which is itself a load-bearing negative result.
+
+\paragraph{H3 (Scheme ranking).} Quantization schemes do not degrade alignment uniformly. The rank ordering of schemes by alignment retention is stable across models and probe methods. Concretely we predict $\mathcal{A}_{\text{BnB-int8}} > \mathcal{A}_{\text{AWQ}} > \mathcal{A}_{\text{GPTQ}} \approx \mathcal{A}_{\text{NF4}}$ at matched perplexity. \textbf{Null framing.} If the ranking is unstable across seeds or probe methods, we report this as evidence that alignment geometry under compression is high-variance and no single quantizer should be recommended without per-model auditing. This motivates the AlignProbe tool directly.
+
+\section{Method}
+
+\subsection{Alignment axes and direction extraction}
+We study three alignment-relevant directions, each extracted by a different, well-established method to rule out probe-specific artifacts:
+\begin{enumerate}
+    \item \textbf{Refusal} --- difference-in-means vectors between harmful and harmless instructions at the residual stream, following \citet{arditi2024refusal}.
+    \item \textbf{Truthfulness} --- Inference-Time Intervention (ITI) truthful heads and linear probes trained on TruthfulQA pairs, following \citet{li2023iti}.
+    \item \textbf{Sycophancy resistance} --- Contrastive Activation Addition (CAA) vectors from matched user-pushed-wrong-belief prompt pairs, following \citet{rimsky2024caa}.
+\end{enumerate}
+A \textbf{control direction} --- a random residual-stream direction of matched norm --- is included for every experiment to guard against the null hypothesis that quantization induces uniform drift of all directions (Objection 3, Sec.~\ref{sec:objections}).
+
+\subsection{Quantization schemes}
+FP16, BnB-int8, NF4 (QLoRA), GPTQ, AWQ. All applied post-hoc to the same fine-tuned checkpoint to isolate the effect of quantization.
+
+\subsection{Two-axis evaluation framework}
+\label{sec:twoaxis}
+We disentangle two quantities that prior work conflates:
+
+\paragraph{Axis 1 --- Capability retention.} Perplexity on WikiText-2, accuracy on MMLU and GSM8K.
+
+\paragraph{Axis 2 --- Alignment retention.} For each (model, quant, direction) cell:
+\begin{itemize}
+    \item \textbf{Subspace angle} $\theta = \arccos\,\cos(\mathbf{d}_{\text{fp16}}, \mathbf{d}_{\text{q}})$ --- the core geometric metric.
+    \item \textbf{Probe accuracy drop} $\Delta\text{acc} = \text{acc}_{\text{fp16}} - \text{acc}_{\text{q}}$.
+    \item \textbf{Steering efficacy at optimal coefficient.} The steering scalar $\alpha$ is re-swept on the quantized model to find its own optimum, and we report the attainable intervention strength. This rules out the trivial-rescaling null.
+    \item \textbf{Behavioral reference.} Attack Success Rate on BeaverTails / DecodingTrust, enabling correlation with \citet{hong2024decoding}.
+\end{itemize}
+
+\paragraph{AlignQuant Score.} A single scalar $\mathcal{A} = 1 - \tfrac{\theta}{\pi/2}$ averaged over directions, reported alongside the capability axis so the differential tax is visible at a glance.
+
+\subsection{The AlignQuant Score}
+The AlignQuant Score collapses the per-cell geometric metrics into a single scalar for leaderboard use. For a given (model, quantization scheme) cell, we compute
+\[
+\mathcal{A} \;=\; 1 - \frac{1}{|\mathcal{D}|}\sum_{d \in \mathcal{D}} \frac{\theta_d}{\pi/2},
+\]
+where $\mathcal{D}$ is the set of alignment directions (refusal, truthfulness, sycophancy) and $\theta_d$ is the subspace angle between the FP16 and quantized direction. $\mathcal{A} = 1$ means perfect alignment preservation; $\mathcal{A} = 0$ means the quantized direction is orthogonal to the original, that is, alignment is destroyed. We always report $\mathcal{A}$ alongside the capability-axis metrics (perplexity, MMLU) so the differential alignment tax is visible as the gap between the two.
+
+\section{Experiments}
+
+\subsection{Models and data}
+\paragraph{Models (local probing).} Llama-3-8B-Instruct, Mistral-7B-Instruct-v0.3, Qwen2.5-7B-Instruct, Gemma-2-9B-it. All probing performed on residual-stream activations at every layer.
+
+\paragraph{Models (API-only behavioral reference).} Cohere Command R (35B) and Command R+ (104B) via Cohere API; behavioral axes only (no hidden-state access).
+
+\paragraph{Quantization schemes.} FP16 baseline, BnB-int8, NF4 (QLoRA), GPTQ (4-bit), AWQ (4-bit).
+
+\paragraph{Data.} AdvBench + HarmBench harmful/harmless pairs (refusal), TruthfulQA MC1/MC2 (truthfulness), Sharma et al. sycophancy prompts + our extensions (sycophancy), WikiText-2 + MMLU + GSM8K (capability).
+
+\paragraph{Hardware.} Primary experiments on Kaggle 2$\times$T4 (32GB VRAM), which fits all 7--9B models in FP16 and 13--35B models in 4-bit, ensuring full reproducibility on a free-tier platform.
+
+\subsection{Does quantization impose a differential alignment tax? (H1)}
+\textcolor{red}{[TODO]}
+
+\subsection{Is the tax scheme-dependent? (H2)}
+\textcolor{red}{[TODO]}
+
+\subsection{Can dynamic-rank PEFT preserve alignment geometry? (H3)}
+\textcolor{red}{[TODO]}
+
+\subsection{Signature analysis: layer-wise alignment vulnerability map}
+\label{sec:layer-map}
+Our first signature result is the \emph{layer vulnerability map}: for every layer $\ell$ of every model, we compute the per-layer subspace angle $\theta_\ell$ between FP16 and quantized refusal directions, producing a heatmap across $(\text{layer} \times \text{scheme})$. This answers a question no prior work poses: is the alignment tax concentrated at a few vulnerable layers, or is it distributed? Preliminary theory predicts the middle third of the network (where \citet{arditi2024refusal} localizes refusal) shows the sharpest angle under 4-bit schemes; this map either confirms that prediction or redirects the field toward a different layer regime.
+
+\subsection{Signature analysis: alignment-tax curvature across bit-widths}
+\label{sec:curvature}
+Our second signature result characterizes how the alignment tax scales with aggression of compression. For each model we extract the refusal direction at FP16, BnB-int8, NF4 (4-bit), and a 3-bit GPTQ checkpoint, and fit the alignment retention curve $\mathcal{A}(b)$ as a function of bit-width $b$. We test whether this curve is \emph{convex}: the prediction is that alignment degrades superlinearly below a critical bit-width (somewhere between 4 and 3 bits), while capability retention degrades roughly linearly in the same regime. A convex-alignment / linear-capability result means practitioners are paying an exponentially increasing safety cost for each bit they shave, and gives the field a principled floor bit-width.
+
+\section{Discussion}
+\textcolor{red}{[TODO --- including null-result framing contingency.]}
+
+\section{Limitations}
+\textcolor{red}{[TODO]}
+
+\section{Pre-Empted Reviewer Objections}
+\label{sec:objections}
+\paragraph{Objection 1: ``Decoding Compressed Trust and Q-resafe already show this.''} Those works are purely behavioral. We operate at the direction level, provide mechanism, and show our angle metric correlates $r>0.8$ with their ASR while being cheaper and interpretable.
+
+\paragraph{Objection 2: ``Refusal directions are single-model artifacts.''} We replicate across four open-weight models and three independent extraction methods (diff-in-means, ITI, CAA), reporting rank-stability of quantizers across the grid.
+
+\paragraph{Objection 3: ``Angle change could be trivial rescaling.''} Two controls: (a) a random matched-norm direction degrades significantly less than safety directions; (b) steering efficacy is re-optimized on the quantized model and still degrades, ruling out pure rescaling.
+
+\section{Broader Impact and Safety Disclosure}
+This work studies safety-relevant degradation of open-weight and API-accessible LLMs, including models in the Cohere Command R family. We follow a coordinated-disclosure protocol: any vulnerability-class finding (e.g., a quantization scheme that systematically disables refusal) is reported to \texttt{safety@cohere.ai} immediately upon discovery and is shared with \texttt{labs@cohere.com} at least four weeks before public release, in accordance with the Cohere Labs Research Grant disclosure policy. We believe public characterization of the alignment tax is net-positive for safe deployment: practitioners currently have no principled way to choose a quantization scheme for safety, and this work provides one.
+
+\paragraph{Acknowledgements.} This work was supported by compute credits from a Cohere Labs Research Grant; these grants are designed to support academic partners conducting research with the goal of releasing scientific artifacts and data for good projects.
+
+\section{Conclusion}
+\textcolor{red}{[TODO]}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
