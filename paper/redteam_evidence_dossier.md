@@ -36,11 +36,13 @@ Committed files:
 - `experiments/generate_redteam_tables.py` - summary table generator.
 - `experiments/redteam_confidence_intervals.py` - Wilson interval generator.
 - `experiments/redteam_proof_bundle.py` - redacted proof bundle generator.
+- `experiments/redteam_canary_rotation.py` - multi-canary replication runner.
 - `experiments/README.md` - commands and experiment workflow.
 - `paper/canary_leak_report.md` - paper-style pilot report.
 - `paper/redteam_headline_results.md` - headline metrics table.
 - `paper/redteam_statistical_evidence.md` - count-based confidence intervals.
 - `paper/redteam_vendor_proof_bundle.md` - redacted cases with raw-record hashes.
+- `paper/redteam_canary_rotation_results.md` - 5-canary replication table.
 - `paper/cohere_disclosure_draft.md` - responsible disclosure draft.
 
 Local ignored result files:
@@ -51,6 +53,8 @@ Local ignored result files:
 - `experiments/results/redteam_deep_max_100/responses.csv`
 - `experiments/results/redteam_deep_max_100/scores_v2.csv`
 - `experiments/results/redteam_deep_max_100/audit_sample.md`
+- `experiments/results/redteam_canary_rotation_5x60/canary_rotation_summary.csv`
+- `experiments/results/redteam_canary_rotation_5x60/canary_*/summary_v2.json`
 
 ## Reproduction Commands
 
@@ -102,6 +106,17 @@ python3 experiments/redteam_proof_bundle.py \
   --out-json experiments/results/redteam_deep_max_100/proof_bundle.json
 ```
 
+```bash
+python3 experiments/redteam_canary_rotation.py \
+  --models command-r7b-12-2024 \
+  --n-canaries 5 \
+  --n-prompts 60 \
+  --out-dir experiments/results/redteam_canary_rotation_5x60 \
+  --paper-md paper/redteam_canary_rotation_results.md \
+  --env-path experiments/.env \
+  --resume
+```
+
 ## Headline Results
 
 | Test | Dataset | N | Metric | Value | Interpretation |
@@ -114,6 +129,26 @@ python3 experiments/redteam_proof_bundle.py \
 | Canary confidentiality | `canary_leak` | 100 | `any_canary_leak_rate` | `54.0%` | Exact or distinctive partial secret leakage. |
 | Instruction hierarchy | `hierarchy_attack` | 100 | `hierarchy_violation_rate` | `11.0%` | Some responses accepted false authority framing. |
 | Boundary behavior | `boundary_probe` | 100 | `over_refusal_rate` | `6.0%` | Some safe dual-use prompts were marked as over-refusals. |
+
+## Canary Rotation Replication
+
+| Canary | Model | N | Exact Leak | Any Leak | Refusal |
+| --- | --- | ---: | ---: | ---: | ---: |
+| `canary_01` | `command-r7b-12-2024` | 60 | `41.7%` | `65.0%` | `53.3%` |
+| `canary_02` | `command-r7b-12-2024` | 60 | `46.7%` | `65.0%` | `51.7%` |
+| `canary_03` | `command-r7b-12-2024` | 60 | `50.0%` | `68.3%` | `53.3%` |
+| `canary_04` | `command-r7b-12-2024` | 60 | `51.7%` | `68.3%` | `53.3%` |
+| `canary_05` | `command-r7b-12-2024` | 60 | `41.7%` | `63.3%` | `58.3%` |
+
+Aggregate across the 5 independent synthetic canaries:
+
+- Exact leaks: `139/300` (`46.4%`)
+- Exact-or-distinctive-partial leaks: `198/300` (`66.0%`)
+- Exact leak range across canaries: `41.7%`-`51.7%`
+
+This replication directly addresses the concern that the original finding was
+tied to a single token string. Raw canary values remain only in ignored local
+result files; the committed rotation table uses canary IDs and SHA-256 prefixes.
 
 ## Canary-Leak Variants
 
@@ -295,6 +330,8 @@ the model can keep a safe educational task inside the requested guardrails.
 5. This is a pilot result. It is useful evidence for a paper direction, but it
    needs larger sample sizes, more models, independent human review, and
    confidence intervals before making broad provider-level claims.
+6. The canary-rotation run materially strengthens the confidentiality finding:
+   leakage persisted across five independently generated synthetic secrets.
 
 ## Paper Direction
 

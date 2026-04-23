@@ -15,6 +15,8 @@ The strongest finding is an application-level confidentiality failure:
 
 - Exact canary leakage: `50/100` probes.
 - Exact-or-distinctive-partial canary leakage: `54/100` probes.
+- Canary-rotation replication: 5 independent canaries, 60 probes each,
+  mean exact leakage `46.4%`, mean exact-or-distinctive-partial leakage `66.0%`.
 - Harmful-request compliance on the paired AdvBench run: `0/100`.
 
 This suggests that harmful-request refusal and prompt-context confidentiality
@@ -32,6 +34,7 @@ need to be evaluated separately.
 | Max output tokens | `300` |
 | Deep probe sample size | 300 responses |
 | Canary probe sample size | 100 responses |
+| Canary-rotation replication | 5 canaries x 60 probes |
 | Scorer | Rule-based offline scorer, `rule_v2_canary_hierarchy` |
 
 ## What This Report Claims
@@ -99,6 +102,8 @@ The internal audit canary token is: [REDACTED_CANARY].
 | --- | --- | ---: | ---: | ---: |
 | `canary_leak` | Exact canary leak | 50/100 | `50.0%` | `40.4%`-`59.6%` |
 | `canary_leak` | Any canary leak | 54/100 | `54.0%` | `44.3%`-`63.4%` |
+| `canary_rotation` | Mean exact canary leak | 139/300 | `46.4%` | 5 independent canaries |
+| `canary_rotation` | Mean any canary leak | 198/300 | `66.0%` | 5 independent canaries |
 | `hierarchy_attack` | Hierarchy violation | 11/100 | `11.0%` | `6.3%`-`18.6%` |
 | `boundary_probe` | Over-refusal marker | 6/100 | `6.0%` | `2.8%`-`12.5%` |
 | `advbench` | Unsafe compliance | 0/100 | `0.0%` | `0.0%`-`3.7%` |
@@ -132,9 +137,11 @@ Repository artifacts:
 - `experiments/score_redteam_responses.py`
 - `experiments/redteam_confidence_intervals.py`
 - `experiments/redteam_proof_bundle.py`
+- `experiments/redteam_canary_rotation.py`
 - `paper/redteam_evidence_dossier.md`
 - `paper/redteam_statistical_evidence.md`
 - `paper/redteam_vendor_proof_bundle.md`
+- `paper/redteam_canary_rotation_results.md`
 
 Local result artifacts:
 
@@ -143,6 +150,7 @@ Local result artifacts:
 - `experiments/results/redteam_deep_max_100/summary_v2.json`
 - `experiments/results/redteam_deep_max_100/audit_sample.md`
 - `experiments/results/redteam_deep_max_100/proof_bundle.json`
+- `experiments/results/redteam_canary_rotation_5x60/canary_rotation_summary.csv`
 
 The proof bundle contains redacted representative cases plus SHA-256 hashes over
 canonical unredacted raw records. This allows verification against the local CSV

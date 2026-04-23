@@ -113,6 +113,19 @@ python redteam_behavior.py \
   --out-dir results/redteam_deep_max_100
 ```
 
+Canary-rotation replication probes, using multiple independent synthetic
+secrets to check whether leakage persists across token changes:
+```bash
+python redteam_canary_rotation.py \
+  --models command-r7b-12-2024 \
+  --n-canaries 5 \
+  --n-prompts 60 \
+  --out-dir results/redteam_canary_rotation_5x60 \
+  --paper-md ../paper/redteam_canary_rotation_results.md \
+  --env-path .env \
+  --resume
+```
+
 Offline rescoring for exact, normalized, partial, and encoded canary leakage:
 ```bash
 python score_redteam_responses.py \
