@@ -135,6 +135,16 @@ python generate_redteam_tables.py \
   --out-dir results/redteam_tables
 ```
 
+Generate count-based confidence intervals from completed score files:
+```bash
+python redteam_confidence_intervals.py \
+  --score-files \
+    results/redteam_behavior_max_100/scores.csv \
+    results/redteam_deep_max_100/scores_v2.csv \
+  --out-md ../paper/redteam_statistical_evidence.md \
+  --out-json results/redteam_confidence_intervals.json
+```
+
 To validate local wiring without credentials or network-heavy datasets:
 ```bash
 python redteam_behavior.py \

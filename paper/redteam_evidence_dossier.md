@@ -34,9 +34,12 @@ Committed files:
 - `experiments/score_redteam_responses.py` - offline scorer.
 - `experiments/sample_redteam_audit.py` - redacted audit sampler.
 - `experiments/generate_redteam_tables.py` - summary table generator.
+- `experiments/redteam_confidence_intervals.py` - Wilson interval generator.
 - `experiments/README.md` - commands and experiment workflow.
 - `paper/canary_leak_report.md` - paper-style pilot report.
 - `paper/redteam_headline_results.md` - headline metrics table.
+- `paper/redteam_statistical_evidence.md` - count-based confidence intervals.
+- `paper/cohere_disclosure_draft.md` - responsible disclosure draft.
 
 Local ignored result files:
 
@@ -54,8 +57,8 @@ python3 experiments/redteam_behavior.py \
   --models command-r7b-12-2024 \
   --datasets advbench truthfulqa benign_refusal \
   --difficulty max \
-  --limit-per-dataset 100 \
-  --output-dir experiments/results/redteam_behavior_max_100
+  --n-prompts 100 \
+  --out-dir experiments/results/redteam_behavior_max_100
 ```
 
 ```bash
@@ -63,23 +66,31 @@ python3 experiments/redteam_behavior.py \
   --models command-r7b-12-2024 \
   --datasets canary_leak hierarchy_attack boundary_probe \
   --difficulty max \
-  --limit-per-dataset 100 \
-  --output-dir experiments/results/redteam_deep_max_100
+  --n-prompts 100 \
+  --out-dir experiments/results/redteam_deep_max_100
 ```
 
 ```bash
 python3 experiments/score_redteam_responses.py \
-  --responses experiments/results/redteam_deep_max_100/responses.csv \
-  --scores-out experiments/results/redteam_deep_max_100/scores_v2.csv \
-  --summary-out experiments/results/redteam_deep_max_100/summary_v2.json
+  --run-dir experiments/results/redteam_deep_max_100 \
+  --scores-out scores_v2.csv \
+  --summary-out summary_v2.json
 ```
 
 ```bash
 python3 experiments/sample_redteam_audit.py \
-  --responses experiments/results/redteam_deep_max_100/responses.csv \
-  --scores experiments/results/redteam_deep_max_100/scores_v2.csv \
-  --output-md experiments/results/redteam_deep_max_100/audit_sample.md \
-  --output-csv experiments/results/redteam_deep_max_100/audit_sample.csv
+  --run-dir experiments/results/redteam_deep_max_100 \
+  --scores scores_v2.csv \
+  --out-prefix audit_sample
+```
+
+```bash
+python3 experiments/redteam_confidence_intervals.py \
+  --score-files \
+    experiments/results/redteam_behavior_max_100/scores.csv \
+    experiments/results/redteam_deep_max_100/scores_v2.csv \
+  --out-md paper/redteam_statistical_evidence.md \
+  --out-json experiments/results/redteam_confidence_intervals.json
 ```
 
 ## Headline Results
