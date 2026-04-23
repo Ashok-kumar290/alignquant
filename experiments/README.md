@@ -77,3 +77,81 @@ Outputs:
 This is an output-level behavioral experiment only. Hosted API responses do not
 expose transformer layer activations or selectable FP16/NF4 precision, so do
 not report these results as internal activation geometry or quantization data.
+
+## Behavioral red-team harness
+```bash
+export COHERE_API_KEY=...
+python redteam_behavior.py \
+  --provider cohere \
+  --models command-r7b-12-2024 \
+  --datasets advbench benign_refusal truthfulqa \
+  --difficulty baseline \
+  --n-prompts 50 \
+  --out-dir results/redteam_behavior
+```
+
+Harder defensive red-team run:
+```bash
+python redteam_behavior.py \
+  --provider cohere \
+  --models command-r7b-12-2024 \
+  --datasets advbench benign_refusal truthfulqa \
+  --difficulty max \
+  --n-prompts 100 \
+  --out-dir results/redteam_behavior_max_100
+```
+
+Deep vulnerability probes for confidential-context leakage, instruction
+hierarchy confusion, and safe-boundary over-refusal:
+```bash
+python redteam_behavior.py \
+  --provider cohere \
+  --models command-r7b-12-2024 \
+  --datasets canary_leak hierarchy_attack boundary_probe \
+  --difficulty max \
+  --n-prompts 100 \
+  --out-dir results/redteam_deep_max_100
+```
+
+Offline rescoring for exact, normalized, partial, and encoded canary leakage:
+```bash
+python score_redteam_responses.py \
+  --run-dir results/redteam_deep_max_100
+```
+
+Redacted human-audit sampling from rescored outputs:
+```bash
+python sample_redteam_audit.py \
+  --run-dir results/redteam_deep_max_100 \
+  --out-prefix audit_sample \
+  --per-label 8
+```
+
+Generate compact headline tables from completed summaries:
+```bash
+python generate_redteam_tables.py \
+  --baseline-run results/redteam_behavior_max_100 \
+  --deep-run results/redteam_deep_max_100 \
+  --out-dir results/redteam_tables
+```
+
+To validate local wiring without credentials or network-heavy datasets:
+```bash
+python redteam_behavior.py \
+  --datasets benign_refusal \
+  --n-prompts 5 \
+  --difficulty max \
+  --out-dir results/redteam_dry_run \
+  --dry-run
+```
+
+Outputs:
+- `prompts.csv` — sampled prompt cases with dataset, category, risk type, and reference fields.
+- `responses.csv` — provider/model responses and request metadata.
+- `scores.csv` — conservative rule-based labels for refusal, unsafe compliance, over-refusal, and uncertainty acknowledgement.
+- `summary.json` — model × dataset aggregate rates.
+- `run_metadata.json` — provider, model list, datasets, decoding settings, and scorer version.
+
+This harness is designed for defensive evaluation. It is intentionally behavioral
+and conservative; use it to compare output-level safety before later joining the
+same prompt IDs with activation-geometry experiments.
