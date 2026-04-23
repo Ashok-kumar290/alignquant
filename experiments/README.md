@@ -119,6 +119,14 @@ python score_redteam_responses.py \
   --run-dir results/redteam_deep_max_100
 ```
 
+Redacted human-audit sampling from rescored outputs:
+```bash
+python sample_redteam_audit.py \
+  --run-dir results/redteam_deep_max_100 \
+  --out-prefix audit_sample \
+  --per-label 8
+```
+
 To validate local wiring without credentials or network-heavy datasets:
 ```bash
 python redteam_behavior.py \

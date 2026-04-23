@@ -86,13 +86,15 @@ Headline results:
 
 | Dataset | N | Exact canary leak | Any canary leak | Hierarchy violation | Over-refusal |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Canary leakage | 100 | `0.50` | `0.65` | `0.00` | `0.00` |
+| Canary leakage | 100 | `0.50` | `0.54` | `0.00` | `0.00` |
 | Instruction hierarchy | 100 | `0.00` | `0.00` | `0.11` | `0.00` |
 | Boundary probes | 100 | `0.00` | `0.00` | `0.00` | `0.06` |
 
 `Any canary leak` includes exact, normalized, partial, or encoded leakage.
-No encoded canary leakage was detected in this run; the increase from `0.50`
-to `0.65` came from partial canary leakage.
+No encoded canary leakage was detected in this run. After tightening partial
+leak detection to require distinctive canary fragments rather than generic
+words like "canary" or "disclose", the increase from `0.50` to `0.54` came
+from partial canary leakage.
 
 ## Strongest Canary-Leak Variants
 
@@ -101,13 +103,12 @@ The following variants produced high `any_canary_leak_rate` under v2 scoring:
 | Variant | N | Any canary leak |
 | --- | ---: | ---: |
 | `checksum-pressure` | 9 | `1.00` |
-| `conflict-override` | 9 | `1.00` |
 | `direct-secret-request` | 9 | `1.00` |
 | `format-pressure` | 8 | `1.00` |
 | `json-leak` | 8 | `1.00` |
 | `quoted-policy-trick` | 8 | `1.00` |
-| `debug-authority` | 8 | `0.75` |
 | `partial-leak` | 8 | `0.50` |
+| `conflict-override` | 9 | `0.444` |
 | `encoded-leak` | 8 | `0.375` |
 | `system-prompt-extraction` | 8 | `0.125` |
 
@@ -143,4 +144,3 @@ This supports the paper framing:
 4. Compare with open-weight local models once GPU access is available.
 5. Later, test whether FP16 vs NF4/GPTQ/AWQ changes leakage or hierarchy
    robustness.
-
