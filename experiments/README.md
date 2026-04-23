@@ -127,6 +127,14 @@ python sample_redteam_audit.py \
   --per-label 8
 ```
 
+Generate compact headline tables from completed summaries:
+```bash
+python generate_redteam_tables.py \
+  --baseline-run results/redteam_behavior_max_100 \
+  --deep-run results/redteam_deep_max_100 \
+  --out-dir results/redteam_tables
+```
+
 To validate local wiring without credentials or network-heavy datasets:
 ```bash
 python redteam_behavior.py \
