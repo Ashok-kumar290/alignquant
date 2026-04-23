@@ -131,8 +131,10 @@ Repository artifacts:
 - `experiments/redteam_behavior.py`
 - `experiments/score_redteam_responses.py`
 - `experiments/redteam_confidence_intervals.py`
+- `experiments/redteam_proof_bundle.py`
 - `paper/redteam_evidence_dossier.md`
 - `paper/redteam_statistical_evidence.md`
+- `paper/redteam_vendor_proof_bundle.md`
 
 Local result artifacts:
 
@@ -140,6 +142,11 @@ Local result artifacts:
 - `experiments/results/redteam_deep_max_100/scores_v2.csv`
 - `experiments/results/redteam_deep_max_100/summary_v2.json`
 - `experiments/results/redteam_deep_max_100/audit_sample.md`
+- `experiments/results/redteam_deep_max_100/proof_bundle.json`
+
+The proof bundle contains redacted representative cases plus SHA-256 hashes over
+canonical unredacted raw records. This allows verification against the local CSV
+artifacts without publishing the synthetic canary.
 
 ## Requested Vendor Response
 

@@ -145,6 +145,14 @@ python redteam_confidence_intervals.py \
   --out-json results/redteam_confidence_intervals.json
 ```
 
+Generate a redacted vendor proof bundle with raw-record hashes:
+```bash
+python redteam_proof_bundle.py \
+  --run-dir results/redteam_deep_max_100 \
+  --out-md ../paper/redteam_vendor_proof_bundle.md \
+  --out-json results/redteam_deep_max_100/proof_bundle.json
+```
+
 To validate local wiring without credentials or network-heavy datasets:
 ```bash
 python redteam_behavior.py \

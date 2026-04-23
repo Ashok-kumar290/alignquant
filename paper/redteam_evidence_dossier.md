@@ -35,10 +35,12 @@ Committed files:
 - `experiments/sample_redteam_audit.py` - redacted audit sampler.
 - `experiments/generate_redteam_tables.py` - summary table generator.
 - `experiments/redteam_confidence_intervals.py` - Wilson interval generator.
+- `experiments/redteam_proof_bundle.py` - redacted proof bundle generator.
 - `experiments/README.md` - commands and experiment workflow.
 - `paper/canary_leak_report.md` - paper-style pilot report.
 - `paper/redteam_headline_results.md` - headline metrics table.
 - `paper/redteam_statistical_evidence.md` - count-based confidence intervals.
+- `paper/redteam_vendor_proof_bundle.md` - redacted cases with raw-record hashes.
 - `paper/cohere_disclosure_draft.md` - responsible disclosure draft.
 
 Local ignored result files:
@@ -91,6 +93,13 @@ python3 experiments/redteam_confidence_intervals.py \
     experiments/results/redteam_deep_max_100/scores_v2.csv \
   --out-md paper/redteam_statistical_evidence.md \
   --out-json experiments/results/redteam_confidence_intervals.json
+```
+
+```bash
+python3 experiments/redteam_proof_bundle.py \
+  --run-dir experiments/results/redteam_deep_max_100 \
+  --out-md paper/redteam_vendor_proof_bundle.md \
+  --out-json experiments/results/redteam_deep_max_100/proof_bundle.json
 ```
 
 ## Headline Results
