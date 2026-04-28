@@ -123,29 +123,37 @@ def markdown(rows: list[dict[str, Any]]) -> str:
         )
 
     if rows:
-        exact_values = [float(str(row["exact_canary_leak_rate"]).rstrip("%")) / 100 for row in rows]
-        any_values = [float(str(row["any_canary_leak_rate"]).rstrip("%")) / 100 for row in rows]
-        exact_count = sum(int(row["exact_canary_leak_count"]) for row in rows)
-        any_count = sum(int(row["any_canary_leak_count"]) for row in rows)
-        total_n = sum(int(row["n"]) for row in rows)
-        exact_low, exact_high = wilson_interval(exact_count, total_n)
-        any_low, any_high = wilson_interval(any_count, total_n)
-        chunks.extend(
-            [
-                "",
-                "## Aggregate",
-                "",
-                f"- Canaries tested: `{len(rows)}`",
-                f"- Total probes: `{total_n}`",
-                f"- Exact leaks: `{exact_count}/{total_n}`",
-                f"- Any leaks: `{any_count}/{total_n}`",
-                f"- Mean exact leak rate: `{pct(sum(exact_values) / len(exact_values))}`",
-                f"- Mean any leak rate: `{pct(sum(any_values) / len(any_values))}`",
-                f"- Pooled exact leak 95% Wilson CI: `{pct(exact_low)}`-`{pct(exact_high)}`",
-                f"- Pooled any leak 95% Wilson CI: `{pct(any_low)}`-`{pct(any_high)}`",
-            ]
-        )
+        by_model: dict[str, list[dict[str, Any]]] = {}
+        for row in rows:
+            by_model.setdefault(str(row["model"]), []).append(row)
 
+        chunks.extend(["", "## Aggregate", ""])
+        for model, group in sorted(by_model.items()):
+            exact_values = [float(str(row["exact_canary_leak_rate"]).rstrip("%")) / 100 for row in group]
+            any_values = [float(str(row["any_canary_leak_rate"]).rstrip("%")) / 100 for row in group]
+            exact_count = sum(int(row["exact_canary_leak_count"]) for row in group)
+            any_count = sum(int(row["any_canary_leak_count"]) for row in group)
+            total_n = sum(int(row["n"]) for row in group)
+            exact_low, exact_high = wilson_interval(exact_count, total_n)
+            any_low, any_high = wilson_interval(any_count, total_n)
+            chunks.extend(
+                [
+                    f"### `{model}`",
+                    "",
+                    f"- Canaries tested: `{len(group)}`",
+                    f"- Total probes: `{total_n}`",
+                    f"- Exact leaks: `{exact_count}/{total_n}`",
+                    f"- Any leaks: `{any_count}/{total_n}`",
+                    f"- Mean exact leak rate: `{pct(sum(exact_values) / len(exact_values))}`",
+                    f"- Mean any leak rate: `{pct(sum(any_values) / len(any_values))}`",
+                    f"- Pooled exact leak 95% Wilson CI: `{pct(exact_low)}`-`{pct(exact_high)}`",
+                    f"- Pooled any leak 95% Wilson CI: `{pct(any_low)}`-`{pct(any_high)}`",
+                    "",
+                ]
+            )
+
+    while chunks and chunks[-1] == "":
+        chunks.pop()
     return "\n".join(chunks) + "\n"
 
 
@@ -207,32 +215,34 @@ def main() -> None:
         )
 
         summary = load_json(run_dir / "summary_v2.json")
-        canary_summary = dataset_row(summary, "canary_leak")
-        n = int(canary_summary["n"])
-        exact_rate = float(canary_summary["exact_canary_leak_rate"])
-        partial_rate = float(canary_summary["partial_canary_leak_rate"])
-        encoded_rate = float(canary_summary["encoded_canary_leak_rate"])
-        any_rate = float(canary_summary["any_canary_leak_rate"])
-        refusal_rate = float(canary_summary["refusal_rate"])
-        rows.append(
-            {
-                "canary_id": canary_id,
-                "model": canary_summary["model"],
-                "n": n,
-                "canary_sha256_prefix": sha256_text(canary)[:16],
-                "exact_canary_leak_count": count_from_rate(exact_rate, n),
-                "partial_canary_leak_count": count_from_rate(partial_rate, n),
-                "encoded_canary_leak_count": count_from_rate(encoded_rate, n),
-                "any_canary_leak_count": count_from_rate(any_rate, n),
-                "refusal_count": count_from_rate(refusal_rate, n),
-                "exact_canary_leak_rate": pct(exact_rate),
-                "partial_canary_leak_rate": pct(partial_rate),
-                "encoded_canary_leak_rate": pct(encoded_rate),
-                "any_canary_leak_rate": pct(any_rate),
-                "refusal_rate": pct(refusal_rate),
-                "run_dir": str(run_dir),
-            }
-        )
+        for canary_summary in summary.get("by_model_dataset", []):
+            if canary_summary.get("dataset") != "canary_leak":
+                continue
+            n = int(canary_summary["n"])
+            exact_rate = float(canary_summary["exact_canary_leak_rate"])
+            partial_rate = float(canary_summary["partial_canary_leak_rate"])
+            encoded_rate = float(canary_summary["encoded_canary_leak_rate"])
+            any_rate = float(canary_summary["any_canary_leak_rate"])
+            refusal_rate = float(canary_summary["refusal_rate"])
+            rows.append(
+                {
+                    "canary_id": canary_id,
+                    "model": canary_summary["model"],
+                    "n": n,
+                    "canary_sha256_prefix": sha256_text(canary)[:16],
+                    "exact_canary_leak_count": count_from_rate(exact_rate, n),
+                    "partial_canary_leak_count": count_from_rate(partial_rate, n),
+                    "encoded_canary_leak_count": count_from_rate(encoded_rate, n),
+                    "any_canary_leak_count": count_from_rate(any_rate, n),
+                    "refusal_count": count_from_rate(refusal_rate, n),
+                    "exact_canary_leak_rate": pct(exact_rate),
+                    "partial_canary_leak_rate": pct(partial_rate),
+                    "encoded_canary_leak_rate": pct(encoded_rate),
+                    "any_canary_leak_rate": pct(any_rate),
+                    "refusal_rate": pct(refusal_rate),
+                    "run_dir": str(run_dir),
+                }
+            )
 
     if rows:
         write_csv(args.out_dir / "canary_rotation_summary.csv", rows)

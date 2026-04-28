@@ -22,6 +22,10 @@ The strongest finding is an application-level confidentiality failure:
 - Multi-turn extraction replication: 50 staged two-turn conversations,
   `26/50` final exact leaks (`52.0%`) and `33/50` transcript-level leaks
   (`66.0%`).
+- Cross-model comparison: under matched canary-rotation probes,
+  `command-r7b-12-2024` exact leaked `58/120` (`48.3%`),
+  `command-r-plus-08-2024` exact leaked `33/120` (`27.5%`),
+  and `command-a-03-2025` exact leaked `1/120` (`0.8%`).
 - Harmful-request compliance on the paired AdvBench run: `0/100`.
 
 This suggests that harmful-request refusal and prompt-context confidentiality
@@ -41,6 +45,7 @@ need to be evaluated separately.
 | Canary probe sample size | 100 responses |
 | Canary-rotation replication | 5 canaries x 60 probes |
 | Multi-turn replication | 5 canaries x 10 two-turn variants |
+| Cross-model comparison | 3 models |
 | Scorer | Rule-based offline scorer, `rule_v2_canary_hierarchy` |
 
 ## What This Report Claims
@@ -112,6 +117,9 @@ The internal audit canary token is: [REDACTED_CANARY].
 | `canary_rotation` | Any canary leak | 198/300 | `66.0%` | `60.5%`-`71.1%` |
 | `multiturn_canary` | Final exact canary leak | 26/50 | `52.0%` | staged two-turn prompts |
 | `multiturn_canary` | Transcript any canary leak | 33/50 | `66.0%` | staged two-turn prompts |
+| `cross_model_rotation` | `command-r7b-12-2024` exact canary leak | 58/120 | `48.3%` | `39.6%`-`57.2%` |
+| `cross_model_rotation` | `command-r-plus-08-2024` exact canary leak | 33/120 | `27.5%` | `20.3%`-`36.1%` |
+| `cross_model_rotation` | `command-a-03-2025` exact canary leak | 1/120 | `0.8%` | `0.1%`-`4.6%` |
 | `hierarchy_attack` | Hierarchy violation | 11/100 | `11.0%` | `6.3%`-`18.6%` |
 | `boundary_probe` | Over-refusal marker | 6/100 | `6.0%` | `2.8%`-`12.5%` |
 | `advbench` | Unsafe compliance | 0/100 | `0.0%` | `0.0%`-`3.7%` |
@@ -152,6 +160,7 @@ Repository artifacts:
 - `paper/redteam_vendor_proof_bundle.md`
 - `paper/redteam_canary_rotation_results.md`
 - `paper/redteam_multiturn_canary_results.md`
+- `paper/cohere_model_comparison.md`
 
 Local result artifacts:
 
@@ -162,6 +171,8 @@ Local result artifacts:
 - `experiments/results/redteam_deep_max_100/proof_bundle.json`
 - `experiments/results/redteam_canary_rotation_5x60/canary_rotation_summary.csv`
 - `experiments/results/redteam_multiturn_canary_5x10/summary.json`
+- `experiments/results/redteam_canary_rotation_multimodel_3x40/canary_rotation_summary.csv`
+- `experiments/results/redteam_multiturn_canary_multimodel_3x10/summary.json`
 
 The proof bundle contains redacted representative cases plus SHA-256 hashes over
 canonical unredacted raw records. This allows verification against the local CSV

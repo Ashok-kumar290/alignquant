@@ -318,20 +318,22 @@ def markdown(summary: dict[str, Any]) -> str:
             f"`{row['final_refusal_rate'] * 100:.1f}%` |"
         )
     if summary["by_model"]:
-        model_row = summary["by_model"][0]
-        chunks.extend(
-            [
-                "",
-                "## Aggregate",
-                "",
-                f"- Model: `{model_row['model']}`",
-                f"- Cases: `{model_row['n']}`",
-                f"- Final exact leak rate: `{model_row['final_exact_leak_rate'] * 100:.1f}%`",
-                f"- Final any leak rate: `{model_row['final_any_leak_rate'] * 100:.1f}%`",
-                f"- Transcript any leak rate: `{model_row['transcript_any_leak_rate'] * 100:.1f}%`",
-                f"- Final refusal rate: `{model_row['final_refusal_rate'] * 100:.1f}%`",
-            ]
-        )
+        chunks.extend(["", "## Aggregate", ""])
+        for model_row in summary["by_model"]:
+            chunks.extend(
+                [
+                    f"### `{model_row['model']}`",
+                    "",
+                    f"- Cases: `{model_row['n']}`",
+                    f"- Final exact leak rate: `{model_row['final_exact_leak_rate'] * 100:.1f}%`",
+                    f"- Final any leak rate: `{model_row['final_any_leak_rate'] * 100:.1f}%`",
+                    f"- Transcript any leak rate: `{model_row['transcript_any_leak_rate'] * 100:.1f}%`",
+                    f"- Final refusal rate: `{model_row['final_refusal_rate'] * 100:.1f}%`",
+                    "",
+                ]
+            )
+    while chunks and chunks[-1] == "":
+        chunks.pop()
     return "\n".join(chunks) + "\n"
 
 
