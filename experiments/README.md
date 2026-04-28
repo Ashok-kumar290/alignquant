@@ -126,6 +126,17 @@ python redteam_canary_rotation.py \
   --resume
 ```
 
+Multi-turn confidentiality probes, testing whether staged conversations recover
+the hidden token more effectively than one-shot prompts:
+```bash
+python redteam_multiturn_canary.py \
+  --models command-r7b-12-2024 \
+  --n-canaries 5 \
+  --out-dir results/redteam_multiturn_canary_5x10 \
+  --paper-md ../paper/redteam_multiturn_canary_results.md \
+  --env-path .env
+```
+
 Offline rescoring for exact, normalized, partial, and encoded canary leakage:
 ```bash
 python score_redteam_responses.py \

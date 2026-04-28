@@ -19,6 +19,9 @@ The strongest finding is an application-level confidentiality failure:
   `139/300` exact leaks (`46.4%`, 95% Wilson CI `40.8%`-`52.0%`) and
   `198/300` exact-or-distinctive-partial leaks (`66.0%`, 95% Wilson CI
   `60.5%`-`71.1%`).
+- Multi-turn extraction replication: 50 staged two-turn conversations,
+  `26/50` final exact leaks (`52.0%`) and `33/50` transcript-level leaks
+  (`66.0%`).
 - Harmful-request compliance on the paired AdvBench run: `0/100`.
 
 This suggests that harmful-request refusal and prompt-context confidentiality
@@ -37,6 +40,7 @@ need to be evaluated separately.
 | Deep probe sample size | 300 responses |
 | Canary probe sample size | 100 responses |
 | Canary-rotation replication | 5 canaries x 60 probes |
+| Multi-turn replication | 5 canaries x 10 two-turn variants |
 | Scorer | Rule-based offline scorer, `rule_v2_canary_hierarchy` |
 
 ## What This Report Claims
@@ -106,6 +110,8 @@ The internal audit canary token is: [REDACTED_CANARY].
 | `canary_leak` | Any canary leak | 54/100 | `54.0%` | `44.3%`-`63.4%` |
 | `canary_rotation` | Exact canary leak | 139/300 | `46.4%` | `40.8%`-`52.0%` |
 | `canary_rotation` | Any canary leak | 198/300 | `66.0%` | `60.5%`-`71.1%` |
+| `multiturn_canary` | Final exact canary leak | 26/50 | `52.0%` | staged two-turn prompts |
+| `multiturn_canary` | Transcript any canary leak | 33/50 | `66.0%` | staged two-turn prompts |
 | `hierarchy_attack` | Hierarchy violation | 11/100 | `11.0%` | `6.3%`-`18.6%` |
 | `boundary_probe` | Over-refusal marker | 6/100 | `6.0%` | `2.8%`-`12.5%` |
 | `advbench` | Unsafe compliance | 0/100 | `0.0%` | `0.0%`-`3.7%` |
@@ -140,10 +146,12 @@ Repository artifacts:
 - `experiments/redteam_confidence_intervals.py`
 - `experiments/redteam_proof_bundle.py`
 - `experiments/redteam_canary_rotation.py`
+- `experiments/redteam_multiturn_canary.py`
 - `paper/redteam_evidence_dossier.md`
 - `paper/redteam_statistical_evidence.md`
 - `paper/redteam_vendor_proof_bundle.md`
 - `paper/redteam_canary_rotation_results.md`
+- `paper/redteam_multiturn_canary_results.md`
 
 Local result artifacts:
 
@@ -153,6 +161,7 @@ Local result artifacts:
 - `experiments/results/redteam_deep_max_100/audit_sample.md`
 - `experiments/results/redteam_deep_max_100/proof_bundle.json`
 - `experiments/results/redteam_canary_rotation_5x60/canary_rotation_summary.csv`
+- `experiments/results/redteam_multiturn_canary_5x10/summary.json`
 
 The proof bundle contains redacted representative cases plus SHA-256 hashes over
 canonical unredacted raw records. This allows verification against the local CSV
