@@ -21,6 +21,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import random
 import subprocess
 import sys
@@ -76,6 +77,20 @@ def pct(value: float) -> str:
     return f"{value * 100:.1f}%"
 
 
+def count_from_rate(rate: float, n: int) -> int:
+    return int(round(rate * n))
+
+
+def wilson_interval(positives: int, n: int, z: float = 1.959963984540054) -> tuple[float, float]:
+    if n <= 0:
+        return 0.0, 0.0
+    phat = positives / n
+    denominator = 1 + z**2 / n
+    center = phat + z**2 / (2 * n)
+    spread = z * math.sqrt((phat * (1 - phat) + z**2 / (4 * n)) / n)
+    return (center - spread) / denominator, (center + spread) / denominator
+
+
 def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     if not rows:
         return
@@ -102,21 +117,32 @@ def markdown(rows: list[dict[str, Any]]) -> str:
         chunks.append(
             "| "
             f"`{row['canary_id']}` | `{row['model']}` | {row['n']} | "
-            f"`{row['canary_sha256_prefix']}` | `{row['exact_canary_leak_rate']}` | "
+            f"`{row['canary_sha256_prefix']}` | `{row['exact_canary_leak_count']}/{row['n']}` "
+            f"(`{row['exact_canary_leak_rate']}`) | "
             f"`{row['any_canary_leak_rate']}` | `{row['refusal_rate']}` |"
         )
 
     if rows:
         exact_values = [float(str(row["exact_canary_leak_rate"]).rstrip("%")) / 100 for row in rows]
         any_values = [float(str(row["any_canary_leak_rate"]).rstrip("%")) / 100 for row in rows]
+        exact_count = sum(int(row["exact_canary_leak_count"]) for row in rows)
+        any_count = sum(int(row["any_canary_leak_count"]) for row in rows)
+        total_n = sum(int(row["n"]) for row in rows)
+        exact_low, exact_high = wilson_interval(exact_count, total_n)
+        any_low, any_high = wilson_interval(any_count, total_n)
         chunks.extend(
             [
                 "",
                 "## Aggregate",
                 "",
                 f"- Canaries tested: `{len(rows)}`",
+                f"- Total probes: `{total_n}`",
+                f"- Exact leaks: `{exact_count}/{total_n}`",
+                f"- Any leaks: `{any_count}/{total_n}`",
                 f"- Mean exact leak rate: `{pct(sum(exact_values) / len(exact_values))}`",
                 f"- Mean any leak rate: `{pct(sum(any_values) / len(any_values))}`",
+                f"- Pooled exact leak 95% Wilson CI: `{pct(exact_low)}`-`{pct(exact_high)}`",
+                f"- Pooled any leak 95% Wilson CI: `{pct(any_low)}`-`{pct(any_high)}`",
             ]
         )
 
@@ -182,17 +208,28 @@ def main() -> None:
 
         summary = load_json(run_dir / "summary_v2.json")
         canary_summary = dataset_row(summary, "canary_leak")
+        n = int(canary_summary["n"])
+        exact_rate = float(canary_summary["exact_canary_leak_rate"])
+        partial_rate = float(canary_summary["partial_canary_leak_rate"])
+        encoded_rate = float(canary_summary["encoded_canary_leak_rate"])
+        any_rate = float(canary_summary["any_canary_leak_rate"])
+        refusal_rate = float(canary_summary["refusal_rate"])
         rows.append(
             {
                 "canary_id": canary_id,
                 "model": canary_summary["model"],
-                "n": canary_summary["n"],
+                "n": n,
                 "canary_sha256_prefix": sha256_text(canary)[:16],
-                "exact_canary_leak_rate": pct(canary_summary["exact_canary_leak_rate"]),
-                "partial_canary_leak_rate": pct(canary_summary["partial_canary_leak_rate"]),
-                "encoded_canary_leak_rate": pct(canary_summary["encoded_canary_leak_rate"]),
-                "any_canary_leak_rate": pct(canary_summary["any_canary_leak_rate"]),
-                "refusal_rate": pct(canary_summary["refusal_rate"]),
+                "exact_canary_leak_count": count_from_rate(exact_rate, n),
+                "partial_canary_leak_count": count_from_rate(partial_rate, n),
+                "encoded_canary_leak_count": count_from_rate(encoded_rate, n),
+                "any_canary_leak_count": count_from_rate(any_rate, n),
+                "refusal_count": count_from_rate(refusal_rate, n),
+                "exact_canary_leak_rate": pct(exact_rate),
+                "partial_canary_leak_rate": pct(partial_rate),
+                "encoded_canary_leak_rate": pct(encoded_rate),
+                "any_canary_leak_rate": pct(any_rate),
+                "refusal_rate": pct(refusal_rate),
                 "run_dir": str(run_dir),
             }
         )

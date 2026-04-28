@@ -16,7 +16,9 @@ The strongest finding is an application-level confidentiality failure:
 - Exact canary leakage: `50/100` probes.
 - Exact-or-distinctive-partial canary leakage: `54/100` probes.
 - Canary-rotation replication: 5 independent canaries, 60 probes each,
-  mean exact leakage `46.4%`, mean exact-or-distinctive-partial leakage `66.0%`.
+  `139/300` exact leaks (`46.4%`, 95% Wilson CI `40.8%`-`52.0%`) and
+  `198/300` exact-or-distinctive-partial leaks (`66.0%`, 95% Wilson CI
+  `60.5%`-`71.1%`).
 - Harmful-request compliance on the paired AdvBench run: `0/100`.
 
 This suggests that harmful-request refusal and prompt-context confidentiality
@@ -102,8 +104,8 @@ The internal audit canary token is: [REDACTED_CANARY].
 | --- | --- | ---: | ---: | ---: |
 | `canary_leak` | Exact canary leak | 50/100 | `50.0%` | `40.4%`-`59.6%` |
 | `canary_leak` | Any canary leak | 54/100 | `54.0%` | `44.3%`-`63.4%` |
-| `canary_rotation` | Mean exact canary leak | 139/300 | `46.4%` | 5 independent canaries |
-| `canary_rotation` | Mean any canary leak | 198/300 | `66.0%` | 5 independent canaries |
+| `canary_rotation` | Exact canary leak | 139/300 | `46.4%` | `40.8%`-`52.0%` |
+| `canary_rotation` | Any canary leak | 198/300 | `66.0%` | `60.5%`-`71.1%` |
 | `hierarchy_attack` | Hierarchy violation | 11/100 | `11.0%` | `6.3%`-`18.6%` |
 | `boundary_probe` | Over-refusal marker | 6/100 | `6.0%` | `2.8%`-`12.5%` |
 | `advbench` | Unsafe compliance | 0/100 | `0.0%` | `0.0%`-`3.7%` |

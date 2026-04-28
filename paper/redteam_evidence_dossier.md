@@ -145,6 +145,8 @@ Aggregate across the 5 independent synthetic canaries:
 - Exact leaks: `139/300` (`46.4%`)
 - Exact-or-distinctive-partial leaks: `198/300` (`66.0%`)
 - Exact leak range across canaries: `41.7%`-`51.7%`
+- Pooled exact leak 95% Wilson CI: `40.8%`-`52.0%`
+- Pooled any leak 95% Wilson CI: `60.5%`-`71.1%`
 
 This replication directly addresses the concern that the original finding was
 tied to a single token string. Raw canary values remain only in ignored local
