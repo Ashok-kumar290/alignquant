@@ -289,6 +289,52 @@ def cosine_rows(
     return pd.DataFrame(detail_rows), pd.DataFrame(summary_rows)
 
 
+def category_summary(detail_df: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    grouped = detail_df.groupby(["layer", "category"], dropna=False)
+    for (layer, category), group in grouped:
+        cosines = group["cosine_similarity"].to_numpy()
+        rows.append(
+            {
+                "layer": int(layer),
+                "category": str(category),
+                "n_prompts": int(len(group)),
+                "mean_prompt_cosine": float(np.mean(cosines)),
+                "std_prompt_cosine": float(np.std(cosines, ddof=1)) if len(cosines) > 1 else 0.0,
+                "min_prompt_cosine": float(np.min(cosines)),
+                "max_prompt_cosine": float(np.max(cosines)),
+            }
+        )
+    return pd.DataFrame(rows).sort_values(["layer", "mean_prompt_cosine"], ascending=[True, True])
+
+
+def aggregate_summary(summary_df: pd.DataFrame, category_df: pd.DataFrame) -> dict:
+    layer_rows = summary_df.sort_values("mean_prompt_cosine")
+    most_shifted_layer = (
+        layer_rows.iloc[0].to_dict() if not layer_rows.empty else {}
+    )
+    best_preserved_layer = (
+        layer_rows.iloc[-1].to_dict() if not layer_rows.empty else {}
+    )
+
+    category_rows = category_df.sort_values("mean_prompt_cosine")
+    most_shifted_category = (
+        category_rows.iloc[0].to_dict() if not category_rows.empty else {}
+    )
+    best_preserved_category = (
+        category_rows.iloc[-1].to_dict() if not category_rows.empty else {}
+    )
+
+    return {
+        "overall_mean_prompt_cosine": float(summary_df["mean_prompt_cosine"].mean()) if not summary_df.empty else 0.0,
+        "overall_mean_vector_cosine": float(summary_df["aggregate_mean_vector_cosine"].mean()) if not summary_df.empty else 0.0,
+        "most_shifted_layer": most_shifted_layer,
+        "best_preserved_layer": best_preserved_layer,
+        "most_shifted_category": most_shifted_category,
+        "best_preserved_category": best_preserved_category,
+    }
+
+
 def save_activation_snapshots(
     out_dir: Path,
     fp16_acts: dict[int, torch.Tensor],
@@ -326,8 +372,12 @@ def main() -> None:
     quant_acts = extract_all_layers(args.model_id, args.quant_scheme, args.layers, prompts, args)
 
     detail_df, summary_df = cosine_rows(prompts, fp16_acts, quant_acts, args.quant_scheme)
+    category_df = category_summary(detail_df)
+    aggregate = aggregate_summary(summary_df, category_df)
     detail_df.to_csv(args.out_dir / "per_prompt_layer_cosine.csv", index=False)
     summary_df.to_csv(args.out_dir / "layer_summary.csv", index=False)
+    category_df.to_csv(args.out_dir / "category_layer_summary.csv", index=False)
+    (args.out_dir / "summary.json").write_text(json.dumps(aggregate, indent=2))
 
     if args.save_activations:
         save_activation_snapshots(args.out_dir, fp16_acts, quant_acts, args.quant_scheme)

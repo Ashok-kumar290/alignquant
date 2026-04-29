@@ -52,9 +52,18 @@ Outputs:
 - `truthfulqa_prompts.csv` — sampled prompt IDs, categories, and questions.
 - `per_prompt_layer_cosine.csv` — paired FP16 vs quantized cosine per prompt and layer.
 - `layer_summary.csv` — mean/std/min/max prompt cosine and aggregate mean-vector cosine per layer.
+- `category_layer_summary.csv` — category-conditioned cosine summary by layer.
+- `summary.json` — aggregate run-level highlights including most-shifted layer/category.
 - `run_metadata.json` — model, seed, layers, prompt count, and tokenization settings.
 
 Use `--save-activations` to additionally save compressed prompt-level mean activation matrices.
+
+Generate a paper-ready markdown summary from a completed activation run:
+```bash
+python truthfulqa_activation_report.py \
+  --run-dir results/truthfulqa_r7b_nf4 \
+  --out-md ../paper/truthfulqa_r7b_nf4_report.md
+```
 
 This requires enough GPU memory to load Command R7B in FP16 for the baseline.
 If the local machine cannot load it, run the local activation pilot above and
