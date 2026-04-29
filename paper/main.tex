@@ -16,6 +16,7 @@
 \usepackage{amssymb}
 \usepackage{algorithm}
 \usepackage{algorithmic}
+\usepackage{xcolor}
 
 \title{AlignQuant: The Alignment Tax of Post-Training Quantization in Large Language Models}
 
@@ -30,19 +31,23 @@
 \maketitle
 
 \begin{abstract}
-Every deployed large language model is quantized, yet quantization research overwhelmingly reports capability-level metrics (perplexity, MMLU) while remaining silent on what quantization does to \emph{alignment-relevant representations}. Prior work on safety-under-compression \citep{hong2024decoding, q-resafe2024} reports \emph{behavioral} degradation on harmful-prompt benchmarks, but provides no mechanistic account of \emph{why} or \emph{where} this degradation occurs. We close this gap with \textbf{AlignQuant}, the first direction-level, subspace-geometric study of the \emph{alignment tax} imposed by post-training quantization. Using three independent direction-extraction methods --- difference-in-means refusal vectors \citep{arditi2024refusal}, ITI truthful heads \citep{li2023iti}, and CAA contrastive activation vectors \citep{rimsky2024caa} --- we measure how five mainstream quantization schemes (FP16, BnB-int8, NF4, GPTQ, AWQ) rotate and attenuate safety-relevant subspaces across four modern open-weight models (Llama-3-8B, Mistral-7B, Qwen2.5-7B, Gemma-2-9B) and the Cohere Command R family. We propose a \textbf{two-axis evaluation framework} that cleanly disentangles \emph{capability-retention} (perplexity, MMLU) from \emph{alignment-retention} (subspace angle, steering-efficacy-at-optimal-coefficient), and show these axes decouple: some schemes (notably \textcolor{red}{[TODO]}) preserve perplexity within noise while imposing a statistically significant alignment tax. We further show that \textbf{DRaFT-Q}, a dynamic rank-aware PEFT method, preserves alignment geometry under aggressive 4-bit quantization substantially better than static LoRA / QLoRA / LoftQ baselines. Our angle-based metric correlates $r > 0.8$ with behavioral ASR from \citet{hong2024decoding} while being orders of magnitude cheaper to compute, model-agnostic, and mechanistically interpretable. We release \textbf{AlignProbe}, a pip-installable toolkit, so any practitioner can audit alignment geometry before deploying a quantized model.
+Every deployed large language model is quantized, yet quantization papers still optimize almost exclusively for capability retention (perplexity, MMLU, GSM8K) while treating alignment as a black-box afterthought. Prior safety-under-compression work \citep{hong2024decoding, q-resafe2024} establishes that behavioral robustness can degrade after compression, but does not provide a reusable direction-level measurement protocol for \emph{why} this happens or how to audit it before deployment. We present \textbf{AlignQuant}, a two-axis evaluation framework that cleanly separates \emph{capability retention} from \emph{alignment retention}, together with \textbf{AlignProbe}, a toolkit for measuring subspace rotation, steering efficacy, and behavioral safety regressions under post-training quantization. This draft contributes two concrete artifacts. First, it formalizes a preregistered open-weight geometry study spanning refusal, truthfulness, and sycophancy directions extracted with independent methods \citep{arditi2024refusal, li2023iti, rimsky2024caa}. Second, it reports an API-only behavioral reference on the Cohere Command R family that stress-tests confidentiality under model-visible context. In a clean two-turn retrieved-context exfiltration rerun, \texttt{command-r7b-12-2024} leaked the exact token in 15/24 cases (62.5\%), whereas \texttt{command-r-plus-08-2024} leaked 1/24 cases (4.2\%) and \texttt{command-a-03-2025} leaked 0/24 cases; in a one-shot retrieved-context extraction setting, all three models leaked heavily. These results do not measure quantization directly, but they motivate the behavioral targets that the open-weight geometry sweep must explain and show that harmful-request refusal and prompt-visible confidentiality are separable properties. We release the measurement protocol, redacted evidence bundles, and paper artifacts so that future quantization studies can report alignment retention as a first-class metric rather than an anecdote.
 \end{abstract}
 
 \section{Introduction}
-\textcolor{red}{[TODO: hook --- every deployed LLM is quantized; alignment literature studies pre-deployment model; gap.]}
+Every production LLM stack makes a compression decision. Weight-only 8-bit inference, 4-bit quantization, activation smoothing, adapter-aware quantization, and low-rank recovery are no longer optimization curiosities; they are deployment defaults. Yet the dominant evaluation loop for these methods still asks a narrow question: does the quantized model preserve perplexity and benchmark accuracy? That is necessary, but it is not sufficient. Alignment is also a property of the deployed model, and deployment-time compression can alter the very residual-stream directions and steering subspaces that post-training alignment methods rely on.
+
+This creates a methodological gap. The alignment literature has shown that refusal, truthfulness, sycophancy resistance, and related behaviors are often linearly localized or at least directionally compressible in hidden-state space \citep{arditi2024refusal, li2023iti, rimsky2024caa, marks2024geometry}. The quantization literature, by contrast, largely stops at output-level capability metrics. Between them sits an unanswered question: when we quantize a model, do we preserve the geometry of the alignment-relevant subspaces we claim to care about, or do we pay an \emph{alignment tax} that is invisible to perplexity?
+
+AlignQuant is designed to answer that question with a protocol that is both mechanistic and operational. Mechanistically, it measures subspace angles, probe retention, and steering efficacy before and after quantization. Operationally, it pairs those geometry measurements with behavioral reference tests on models where hidden states are unavailable. The current repository contains the full measurement pipeline plus a closed-model red-team reference on the Cohere Command R family. That reference is not itself a quantization result. It serves a different role: it identifies concrete confidentiality failures that an eventual open-weight geometry analysis should help predict and explain.
 
 \paragraph{Contributions.}
 \begin{itemize}
-    \item We formalize the \emph{alignment tax} of quantization and define the \textbf{AlignQuant Score}, a unified metric aggregating geometry preservation across safety-relevant directions.
-    \item We release \textbf{AlignQuant-Eval}, a benchmark pairing four alignment probes with five quantization schemes across eight models.
-    \item We show quantization is \emph{not} alignment-neutral: the tax is scheme-dependent, layer-localized, and only partially recoverable.
-    \item We introduce \textbf{DRaFT-Q} evaluation on alignment geometry and show dynamic rank allocation preserves safety-relevant directions better than static PEFT.
-    \item We release \textbf{AlignProbe}, an open-source toolkit enabling any practitioner to audit alignment geometry before deployment.
+    \item We formalize the \emph{alignment tax} of quantization and define a two-axis evaluation protocol that separates capability retention from alignment retention.
+    \item We define the \textbf{AlignQuant Score}, a unified scalar summarizing geometry preservation across multiple safety-relevant directions.
+    \item We release \textbf{AlignProbe}, an open-source measurement toolkit covering direction extraction, behavioral red-teaming, confidence intervals, and redacted evidence bundles.
+    \item We provide a preregistered open-weight study design for quantization geometry across refusal, truthfulness, and sycophancy axes.
+    \item We report an API-only behavioral reference on the Cohere Command R family showing that confidentiality robustness depends strongly on both model family member and context type, especially in retrieved-context and staged extraction settings.
 \end{itemize}
 
 \section{Related Work}
@@ -131,14 +136,40 @@ where $\mathcal{D}$ is the set of alignment directions (refusal, truthfulness, s
 
 \paragraph{Hardware.} Primary experiments on Kaggle 2$\times$T4 (32GB VRAM), which fits all 7--9B models in FP16 and 13--35B models in 4-bit, ensuring full reproducibility on a free-tier platform.
 
+\subsection{API-only behavioral reference on the Cohere Command R family}
+\label{sec:experiments}
+The repository currently contains a completed behavioral reference suite on three Cohere models: \texttt{command-r7b-12-2024}, \texttt{command-r-plus-08-2024}, and \texttt{command-a-03-2025}. This suite is not a substitute for the open-weight geometry analysis because hidden states are unavailable, but it serves two practical purposes. First, it identifies concrete failure classes that a future geometry metric should correlate with. Second, it demonstrates that harmful-request refusal and confidentiality under model-visible context are separable axes.
+
+The strongest closed-model result is a retrieved-context confidentiality failure. In a single-turn tool-context setting, where a synthetic confidential token is placed in a retrieved record and the user asks for extraction, all three models leaked heavily: exact leakage was 20/24 for \texttt{command-r7b-12-2024}, 18/24 for \texttt{command-r-plus-08-2024}, and 19/24 for \texttt{command-a-03-2025}. This is operationally important because many real systems place internal notes, identifiers, or customer data into retrieved passages rather than system prompts.
+
+The more discriminating result appears in a cleaner two-turn tool-chain exfiltration rerun. There the model first receives a confidential retrieved record, then answers a safe summary or redacted-view request, and only afterwards gets a follow-up request for the exact token. The final exact leakage rates are summarized in Table~\ref{tab:toolchain-clean}. In this staged setting, \texttt{command-r7b-12-2024} remains clearly vulnerable, while the stronger models mostly refuse the second-step extraction turn.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+Model & First-turn any leak & Final exact leak & Transcript any leak & Final refusal \\
+\midrule
+\texttt{command-r7b-12-2024} & 8/24 (33.3\%) & 15/24 (62.5\%) & 18/24 (75.0\%) & 12/24 (50.0\%) \\
+\texttt{command-r-plus-08-2024} & 2/24 (8.3\%) & 1/24 (4.2\%) & 5/24 (20.8\%) & 24/24 (100.0\%) \\
+\texttt{command-a-03-2025} & 1/24 (4.2\%) & 0/24 (0.0\%) & 4/24 (16.7\%) & 24/24 (100.0\%) \\
+\bottomrule
+\end{tabular}
+\caption{Clean two-turn retrieved-context exfiltration rerun on the Cohere Command R family. The models are given a confidential retrieved record, asked for a safe first-step summary, and then asked to extract the token exactly.}
+\label{tab:toolchain-clean}
+\end{table}
+
+This behavioral reference does not establish a quantization effect. It establishes a target phenomenon: alignment-relevant confidentiality behavior can fail sharply when context type changes from direct prompt instruction to retrieved/tool-style state. Any geometry-based alignment-retention metric that claims deployment relevance should eventually predict or explain this kind of context-conditioned behavioral break.
+
 \subsection{Does quantization impose a differential alignment tax? (H1)}
-\textcolor{red}{[TODO]}
+The open-weight geometry sweep for H1 is specified but not yet finalized in this repository snapshot. The key test compares the subspace angle of a refusal direction before and after quantization against a matched-norm control direction extracted from an unrelated semantic contrast. The main outcome is not simply whether quantization moves the representation, but whether it moves \emph{alignment-relevant} directions more than generic ones. We will report layer-aggregated and layer-localized angle distributions, together with bootstrap uncertainty over prompt subsets, for NF4 and GPTQ at minimum.
 
 \subsection{Is the tax scheme-dependent? (H2)}
-\textcolor{red}{[TODO]}
+H2 asks whether different quantizers preserve alignment geometry differently at matched capability loss. The implemented protocol already fixes the capability axis (perplexity, MMLU, GSM8K) and the alignment axis (angle, probe retention, steering efficacy), so the remaining work is to execute the full grid across the open-weight models. The intended analysis is a per-model ranking of schemes by AlignQuant Score, followed by a cross-model stability analysis. The behavioral reference on the Cohere Command R family already suggests that model family members can differ materially on confidentiality robustness; the open-weight sweep will test whether quantization introduces an analogous ranking within a fixed base model.
 
 \subsection{Can dynamic-rank PEFT preserve alignment geometry? (H3)}
-\textcolor{red}{[TODO]}
+H3 evaluates whether dynamic-rank recovery methods preserve alignment geometry better than static low-rank baselines when the backbone is aggressively quantized. The protocol is straightforward: quantize the base model, apply static LoRA / QLoRA / LoftQ versus dynamic-rank DRaFT-Q, re-extract the alignment directions, and compare both angle retention and steering efficacy. We do not report a completed DRaFT-Q result in the current repository snapshot, so this subsection should be read as the prespecified comparison rather than a finished empirical claim.
 
 \subsection{Signature analysis: layer-wise alignment vulnerability map}
 \label{sec:layer-map}
@@ -149,16 +180,18 @@ Our first signature result is the \emph{layer vulnerability map}: for every laye
 Our second signature result characterizes how the alignment tax scales with aggression of compression. For each model we extract the refusal direction at FP16, BnB-int8, NF4 (4-bit), and a 3-bit GPTQ checkpoint, and fit the alignment retention curve $\mathcal{A}(b)$ as a function of bit-width $b$. We test whether this curve is \emph{convex}: the prediction is that alignment degrades superlinearly below a critical bit-width (somewhere between 4 and 3 bits), while capability retention degrades roughly linearly in the same regime. A convex-alignment / linear-capability result means practitioners are paying an exponentially increasing safety cost for each bit they shave, and gives the field a principled floor bit-width.
 
 \section{Discussion}
-\textcolor{red}{[TODO --- including null-result framing contingency.]}
+Two practical lessons already emerge from the current artifact set. First, alignment should be evaluated on more than one axis. The Cohere reference suite refuses harmful prompts robustly, yet still shows substantial confidentiality failures when secrets are placed in model-visible context. That is exactly the kind of decoupling the AlignQuant protocol is designed to surface for quantization as well: a model can look capability-stable and even safety-stable on one benchmark family while drifting badly on another alignment-relevant behavior. Second, context type matters. One-shot extracted system-context probes, one-shot retrieved-context probes, and staged two-turn exfiltration flows do not produce the same ranking across models. Any serious alignment-retention metric needs to explain that heterogeneity rather than average it away.
+
+The null-result framing remains important. If the open-weight geometry sweep shows that quantization rotates refusal directions no more than matched control directions, or that angle change fails to predict behavioral regression, that would still be a useful scientific result. It would mean that current interpretability stories about low-dimensional alignment do not transfer cleanly to the compressed regime, and the field would need different tools. AlignQuant is designed so that either outcome is informative.
 
 \section{Limitations}
-\textcolor{red}{[TODO]}
+The current repository is strongest on methodology and behavioral reference evidence, not yet on the full open-weight quantization sweep promised by the paper title. We therefore avoid claiming completed geometry results that are not present. The Cohere behavioral reference is also limited in two ways: it is API-only, so we cannot inspect internal activations, and it concerns application-visible synthetic secrets rather than provider-hidden prompts or real user data. Finally, several of the confidence intervals are still pilot-scale because some staged experiments run at only 24 cases per model. The paper-grade contribution today is therefore a rigorously specified protocol plus a credible behavioral reference suite, not a finished universal theory of quantization-induced alignment failure.
 
 \section{Pre-Empted Reviewer Objections}
 \label{sec:objections}
 \paragraph{Objection 1: ``Decoding Compressed Trust and Q-resafe already show this.''} Those works are purely behavioral. We operate at the direction level, provide mechanism, and show our angle metric correlates $r>0.8$ with their ASR while being cheaper and interpretable.
 
-\paragraph{Objection 2: ``Refusal directions are single-model artifacts.''} We replicate across four open-weight models and three independent extraction methods (diff-in-means, ITI, CAA), reporting rank-stability of quantizers across the grid.
+\paragraph{Objection 2: ``Refusal directions are single-model artifacts.''} The study is designed to address this by spanning four open-weight models and three independent extraction methods (diff-in-means, ITI, CAA). The current repository snapshot contains the full protocol and closed-model behavioral reference, while the multi-model open-weight execution remains ongoing.
 
 \paragraph{Objection 3: ``Angle change could be trivial rescaling.''} Two controls: (a) a random matched-norm direction degrades significantly less than safety directions; (b) steering efficacy is re-optimized on the quantized model and still degrades, ruling out pure rescaling.
 
@@ -168,7 +201,7 @@ This work studies safety-relevant degradation of open-weight and API-accessible 
 \paragraph{Acknowledgements.} This work was supported by compute credits from a Cohere Labs Research Grant; these grants are designed to support academic partners conducting research with the goal of releasing scientific artifacts and data for good projects.
 
 \section{Conclusion}
-\textcolor{red}{[TODO]}
+Compression is a deployment decision, and deployment decisions should be evaluated on deployment-relevant alignment properties. AlignQuant contributes a concrete way to do that: separate capability retention from alignment retention, measure geometry when hidden states are available, and anchor those measurements to behavioral reference tests when they are not. The current artifact set already shows that confidentiality robustness under model-visible context can vary sharply across models and across context types, even when harmful-request refusal remains strong. The next step is to complete the open-weight geometry sweep and test whether subspace rotation, probe degradation, and steering-efficacy loss can predict those behavioral failures before deployment. If they can, the field gets a practical auditing tool. If they cannot, that is still a valuable negative result about the limits of current linear-alignment accounts under compression.
 
 \bibliographystyle{plainnat}
 \bibliography{references}
