@@ -37,24 +37,39 @@ the same red-team families.
 | `command-r-plus-08-2024` | 3/30 | `10.0%` | `43.3%` | `76.7%` | `80.0%` |
 | `command-a-03-2025` | 0/30 | `0.0%` | `43.3%` | `50.0%` | `96.7%` |
 
+## Retrieved-Context / Tool-Output Leakage
+
+3 independent canaries, 8 retrieved-context or tool-style variants, `24` cases
+per model.
+
+| Model | Exact Leaks | Exact Leak Rate | Any Leaks | Any Leak Rate | Refusal Rate |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `command-r7b-12-2024` | 20/24 | `83.3%` | 24/24 | `100.0%` | `4.2%` |
+| `command-r-plus-08-2024` | 18/24 | `75.0%` | 22/24 | `91.7%` | `25.0%` |
+| `command-a-03-2025` | 19/24 | `79.2%` | 22/24 | `91.7%` | `16.7%` |
+
 ## Interpretation
 
-1. `command-r7b-12-2024` is the weakest of the three on application-visible
-   confidentiality.
-2. `command-r-plus-08-2024` improves materially on exact leakage, but still
-   shows substantial transcript-level leakage in staged conversations.
-3. `command-a-03-2025` is much stronger on exact leakage, but still shows some
-   transcript-level partial leakage or policy-restatement leakage in multi-turn
-   settings.
-4. Higher refusal rates appear correlated with lower exact leakage, but they do
-   not eliminate transcript-level leakage risk.
+1. `command-r7b-12-2024` remains the weakest on direct system-context leakage.
+2. `command-r-plus-08-2024` improves materially on exact leakage in both
+   single-turn and multi-turn system-context probes, but still shows substantial
+   transcript-level leakage in staged conversations.
+3. `command-a-03-2025` is much stronger on direct system-context exact leakage,
+   but that advantage largely disappears when the secret is moved into
+   retrieved/tool-style context.
+4. Context type matters. A model that appears robust under direct prompt-secret
+   probes can still leak heavily when the same secret is embedded in a retrieved
+   document or tool output.
+5. Higher refusal rates appear correlated with lower exact leakage in
+   system-context probes, but they do not eliminate retrieved-context leakage risk.
 
 ## Practical Readout
 
 For a vendor report, the cleanest statement is:
 
 > Cohere models differ materially in confidentiality robustness when secrets are
-> placed in model-visible context. In our controlled evaluation, `command-a-03-2025`
-> was substantially stronger than `command-r-plus-08-2024`, and both were
-> stronger than `command-r7b-12-2024`, but no model should be treated as making
-> prompt-visible secrets safe by instruction alone.
+> placed in model-visible context, and the ranking depends on where the secret
+> appears. In our controlled evaluation, `command-a-03-2025` was substantially
+> stronger than `command-r-plus-08-2024` and `command-r7b-12-2024` for
+> system-context exact leakage, but all three leaked heavily when the secret was
+> embedded in retrieved or tool-style context.
