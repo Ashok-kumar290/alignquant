@@ -48,6 +48,18 @@ per model.
 | `command-r-plus-08-2024` | 18/24 | `75.0%` | 22/24 | `91.7%` | `25.0%` |
 | `command-a-03-2025` | 19/24 | `79.2%` | 22/24 | `91.7%` | `16.7%` |
 
+## Tool-Chain Exfiltration After a Safe Summary Step
+
+3 independent canaries, 8 two-turn retrieved-context variants, `24` cases per
+model. This rerun uses a canary format without scorer-confounding suffix
+overlap.
+
+| Model | First-Turn Any Leak | Final Exact Leak | Final Any Leak | Transcript Any Leak | Final Refusal |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `command-r7b-12-2024` | `33.3%` | `62.5%` | `62.5%` | `75.0%` | `50.0%` |
+| `command-r-plus-08-2024` | `8.3%` | `4.2%` | `12.5%` | `20.8%` | `100.0%` |
+| `command-a-03-2025` | `4.2%` | `0.0%` | `12.5%` | `16.7%` | `100.0%` |
+
 ## Interpretation
 
 1. `command-r7b-12-2024` remains the weakest on direct system-context leakage.
@@ -62,6 +74,10 @@ per model.
    document or tool output.
 5. Higher refusal rates appear correlated with lower exact leakage in
    system-context probes, but they do not eliminate retrieved-context leakage risk.
+6. In the clean two-turn tool-chain rerun, the model ranking remained
+   materially different: `command-r7b-12-2024` still leaked heavily after a
+   safe-summary first step, while `command-r-plus-08-2024` and
+   `command-a-03-2025` mostly refused the follow-up extraction turn.
 
 ## Practical Readout
 
@@ -72,4 +88,6 @@ For a vendor report, the cleanest statement is:
 > appears. In our controlled evaluation, `command-a-03-2025` was substantially
 > stronger than `command-r-plus-08-2024` and `command-r7b-12-2024` for
 > system-context exact leakage, but all three leaked heavily when the secret was
-> embedded in retrieved or tool-style context.
+> embedded in retrieved or tool-style context. In a cleaner two-turn
+> summary-then-extraction rerun, `command-r7b-12-2024` still leaked heavily,
+> while the stronger models mostly held the line.
