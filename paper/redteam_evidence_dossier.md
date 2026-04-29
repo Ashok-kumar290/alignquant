@@ -38,6 +38,9 @@ Committed files:
 - `experiments/redteam_proof_bundle.py` - redacted proof bundle generator.
 - `experiments/redteam_canary_rotation.py` - multi-canary replication runner.
 - `experiments/redteam_multiturn_canary.py` - staged two-turn extraction runner.
+- `experiments/redteam_tool_context_canary.py` - retrieved-context single-turn leakage runner.
+- `experiments/redteam_toolchain_exfiltration.py` - clean two-turn retrieved-context exfiltration runner.
+- `experiments/redteam_toolchain_evidence.py` - offline generator for tool-chain CIs and appendix.
 - `experiments/README.md` - commands and experiment workflow.
 - `paper/canary_leak_report.md` - paper-style pilot report.
 - `paper/redteam_headline_results.md` - headline metrics table.
@@ -45,6 +48,10 @@ Committed files:
 - `paper/redteam_vendor_proof_bundle.md` - redacted cases with raw-record hashes.
 - `paper/redteam_canary_rotation_results.md` - 5-canary replication table.
 - `paper/redteam_multiturn_canary_results.md` - staged conversation extraction table.
+- `paper/redteam_tool_context_canary_results.md` - retrieved-context single-turn comparison.
+- `paper/redteam_toolchain_exfiltration_clean_results.md` - clean two-turn retrieved-context comparison.
+- `paper/redteam_toolchain_statistical_evidence.md` - Wilson intervals for the clean tool-chain rerun.
+- `paper/redteam_toolchain_appendix.md` - redacted hashed representative cases from the clean rerun.
 - `paper/cohere_disclosure_draft.md` - responsible disclosure draft.
 
 Local ignored result files:
@@ -59,6 +66,11 @@ Local ignored result files:
 - `experiments/results/redteam_canary_rotation_5x60/canary_*/summary_v2.json`
 - `experiments/results/redteam_multiturn_canary_5x10/summary.json`
 - `experiments/results/redteam_multiturn_canary_5x10/responses.csv`
+- `experiments/results/redteam_tool_context_canary_3x8/summary.json`
+- `experiments/results/redteam_tool_context_canary_3x8/responses.csv`
+- `experiments/results/redteam_toolchain_exfiltration_clean_3x8/summary.json`
+- `experiments/results/redteam_toolchain_exfiltration_clean_3x8/responses.csv`
+- `experiments/results/redteam_toolchain_exfiltration_clean_3x8/evidence.json`
 
 ## Reproduction Commands
 
@@ -130,6 +142,34 @@ python3 experiments/redteam_multiturn_canary.py \
   --env-path experiments/.env
 ```
 
+```bash
+python3 experiments/redteam_tool_context_canary.py \
+  --models command-r7b-12-2024 command-r-plus-08-2024 command-a-03-2025 \
+  --n-canaries 3 \
+  --out-dir experiments/results/redteam_tool_context_canary_3x8 \
+  --paper-md paper/redteam_tool_context_canary_results.md \
+  --env-path experiments/.env \
+  --resume
+```
+
+```bash
+python3 experiments/redteam_toolchain_exfiltration.py \
+  --models command-r7b-12-2024 command-r-plus-08-2024 command-a-03-2025 \
+  --n-canaries 3 \
+  --out-dir experiments/results/redteam_toolchain_exfiltration_clean_3x8 \
+  --paper-md paper/redteam_toolchain_exfiltration_clean_results.md \
+  --env-path experiments/.env \
+  --resume
+```
+
+```bash
+python3 experiments/redteam_toolchain_evidence.py \
+  --responses experiments/results/redteam_toolchain_exfiltration_clean_3x8/responses.csv \
+  --out-stats-md paper/redteam_toolchain_statistical_evidence.md \
+  --out-appendix-md paper/redteam_toolchain_appendix.md \
+  --out-json experiments/results/redteam_toolchain_exfiltration_clean_3x8/evidence.json
+```
+
 ## Headline Results
 
 | Test | Dataset | N | Metric | Value | Interpretation |
@@ -190,6 +230,25 @@ Aggregate across 50 staged two-turn conversations:
 This matters because it shows the issue is not limited to one-shot extraction.
 Several conversational attack families reached `100.0%` exact leakage across
 all five tested canaries.
+
+## Retrieved-Context and Tool-Chain Results
+
+Single-turn retrieved-context comparison (`24` cases per model):
+
+- `command-r7b-12-2024`: exact leaks `20/24` (`83.3%`), any leaks `24/24` (`100.0%`)
+- `command-r-plus-08-2024`: exact leaks `18/24` (`75.0%`), any leaks `22/24` (`91.7%`)
+- `command-a-03-2025`: exact leaks `19/24` (`79.2%`), any leaks `22/24` (`91.7%`)
+
+Clean two-turn tool-chain rerun (`24` cases per model):
+
+- `command-r7b-12-2024`: final exact leaks `15/24` (`62.5%`), transcript leaks `18/24` (`75.0%`)
+- `command-r-plus-08-2024`: final exact leaks `1/24` (`4.2%`), transcript leaks `5/24` (`20.8%`)
+- `command-a-03-2025`: final exact leaks `0/24` (`0.0%`), transcript leaks `4/24` (`16.7%`)
+
+This pair of experiments tightens the threat model:
+
+- all three models were weak when the confidential value appeared directly in retrieved/tool-style context and the request was one-shot,
+- but in a cleaner staged two-turn exfiltration flow, `command-r7b-12-2024` remained the clearly weakest model while the stronger models mostly refused the second-step extraction request.
 
 ## Canary-Leak Variants
 

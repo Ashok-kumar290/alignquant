@@ -215,6 +215,7 @@ Repository artifacts:
 - `experiments/redteam_multiturn_canary.py`
 - `experiments/redteam_tool_context_canary.py`
 - `experiments/redteam_toolchain_exfiltration.py`
+- `experiments/redteam_toolchain_evidence.py`
 - `paper/redteam_evidence_dossier.md`
 - `paper/redteam_statistical_evidence.md`
 - `paper/redteam_vendor_proof_bundle.md`
@@ -222,6 +223,8 @@ Repository artifacts:
 - `paper/redteam_multiturn_canary_results.md`
 - `paper/redteam_tool_context_canary_results.md`
 - `paper/redteam_toolchain_exfiltration_clean_results.md`
+- `paper/redteam_toolchain_statistical_evidence.md`
+- `paper/redteam_toolchain_appendix.md`
 - `paper/cohere_model_comparison.md`
 
 Local result artifacts:
