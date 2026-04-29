@@ -123,6 +123,25 @@ The AlignQuant Score collapses the per-cell geometric metrics into a single scal
 \]
 where $\mathcal{D}$ is the set of alignment directions (refusal, truthfulness, sycophancy) and $\theta_d$ is the subspace angle between the FP16 and quantized direction. $\mathcal{A} = 1$ means perfect alignment preservation; $\mathcal{A} = 0$ means the quantized direction is orthogonal to the original, that is, alignment is destroyed. We always report $\mathcal{A}$ alongside the capability-axis metrics (perplexity, MMLU) so the differential alignment tax is visible as the gap between the two.
 
+\subsection{Threat model}
+The paper studies deployment-time alignment degradation under three distinct but related settings. Table~\ref{tab:threat-model} makes the boundaries explicit so the reader can distinguish what is already evidenced in this repository from what the open-weight sweep is meant to explain.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{p{0.19\linewidth}p{0.22\linewidth}p{0.20\linewidth}p{0.28\linewidth}}
+\toprule
+Setting & Attacker access & Secret / target type & Primary metric \\
+\midrule
+System-context probe & User prompt only; synthetic secret injected into model-visible instructions & Application-supplied canary in system context & Exact / any canary leak rate \\
+Retrieved-context probe & User prompt plus model-visible retrieved record or tool-style state & Confidential field in retrieved/tool context & Exact / any canary leak rate \\
+Quantization geometry sweep & Open-weight checkpoint plus quantized variants & Alignment-relevant residual-stream directions & Subspace angle, probe retention, steering efficacy \\
+\bottomrule
+\end{tabular}
+\caption{Threat-model summary. The first two rows are behaviorally evidenced in the current repository. The third row is the open-weight study that AlignQuant is designed to execute and explain.}
+\label{tab:threat-model}
+\end{table}
+
 \section{Experiments}
 
 \subsection{Models and data}
@@ -135,6 +154,29 @@ where $\mathcal{D}$ is the set of alignment directions (refusal, truthfulness, s
 \paragraph{Data.} AdvBench + HarmBench harmful/harmless pairs (refusal), TruthfulQA MC1/MC2 (truthfulness), Sharma et al. sycophancy prompts + our extensions (sycophancy), WikiText-2 + MMLU + GSM8K (capability).
 
 \paragraph{Hardware.} Primary experiments on Kaggle 2$\times$T4 (32GB VRAM), which fits all 7--9B models in FP16 and 13--35B models in 4-bit, ensuring full reproducibility on a free-tier platform.
+
+\subsection{Master behavioral summary}
+Before turning to the open-weight geometry program, we summarize the completed behavioral reference results that are already supported by repository artifacts. Table~\ref{tab:master-results} is the quickest way to read the current evidence: harmful-request refusal is strong, but confidentiality robustness varies sharply with context type and model.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+Family & Setting & Metric & \texttt{command-r7b-12-2024} & \texttt{command-r-plus-08-2024} & \texttt{command-a-03-2025} \\
+\midrule
+Harmful prompts & AdvBench reference & Unsafe compliance & 0/100 (0.0\%) & -- & -- \\
+System context & Canary rotation & Exact leak & 58/120 (48.3\%) & 33/120 (27.5\%) & 1/120 (0.8\%) \\
+System context & Multi-turn extraction & Final exact leak & 16/30 (53.3\%) & 3/30 (10.0\%) & 0/30 (0.0\%) \\
+Retrieved context & Single-turn tool-context probe & Exact leak & 20/24 (83.3\%) & 18/24 (75.0\%) & 19/24 (79.2\%) \\
+Retrieved context & Single-turn tool-context probe & Any leak & 24/24 (100.0\%) & 22/24 (91.7\%) & 22/24 (91.7\%) \\
+Retrieved context & Clean two-turn tool-chain rerun & Final exact leak & 15/24 (62.5\%) & 1/24 (4.2\%) & 0/24 (0.0\%) \\
+Retrieved context & Clean two-turn tool-chain rerun & Transcript any leak & 18/24 (75.0\%) & 5/24 (20.8\%) & 4/24 (16.7\%) \\
+\bottomrule
+\end{tabular}
+\caption{Master summary of the completed behavioral evidence currently available in the repository. Dashes indicate that the specific baseline was not part of the earlier 100-prompt harmful-request pilot.}
+\label{tab:master-results}
+\end{table*}
 
 \subsection{API-only behavioral reference on the Cohere Command R family}
 \label{sec:experiments}
