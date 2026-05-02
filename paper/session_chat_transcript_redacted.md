@@ -1318,3 +1318,123 @@ ohh mute the API keys and just update the whole chat also i revoked the api keys
 ---
 
 End of redacted transcript at the point of archival.
+
+---
+
+## Appended follow-up
+
+**User**
+
+```text
+add all the most important and effective experiments list and make a neat documentation to it and push
+```
+
+**Assistant**
+
+```text
+Done. I added a consolidated experiment reference and pushed it.
+
+Main file:
+- paper/experiment_catalog.md
+
+Pointer updated:
+- experiments/README.md
+
+GitHub:
+- https://github.com/Ashok-kumar290/alignquant/blob/main/paper/experiment_catalog.md
+- https://github.com/Ashok-kumar290/alignquant/blob/main/experiments/README.md
+
+Commit:
+- 7509443 — Add consolidated experiment catalog
+
+What’s in the new doc:
+- priority-ranked list of the most important experiments
+- what each experiment proves
+- why each one is effective
+- exact scripts and run commands
+- output files and paper artifacts
+- recommended order for vendor disclosure vs paper work vs local validation
+- current strongest evidence summary
+
+Repo is clean and pushed to main.
+```
+
+**User**
+
+```text
+is there anything left before i shift the whole repo to a different envirnment
+```
+
+**Assistant**
+
+```text
+Yes. A few practical things are left before moving it.
+
+Current repo state:
+- main is clean and synced with origin/main
+- no uncommitted tracked changes
+
+What will not move with the repo automatically:
+- experiments/.env
+- experiments/.venv
+- local results/ directories
+- __pycache__/
+
+What you should do before shifting environments:
+1. Recreate secrets in the new environment
+   - your .env is local-only
+   - do not rely on it being in git
+
+2. Rebuild the Python environment
+   - use experiments/setup_env.sh
+   - it creates .venv and installs requirements.txt
+
+3. Decide whether you need old run artifacts
+   - local results exist in:
+     - /home/ubuntu/alignquant/experiments/results
+     - /home/ubuntu/alignquant/results
+   - if those contain useful raw outputs, copy them separately before moving
+
+4. Install missing system dependencies on the new machine
+   - pdflatex if you want to compile the paper
+   - GPU/CUDA stack if you want the open-weight quantization runs
+   - this current EC2 box did not have the needed GPU runtime
+
+5. Re-run a smoke check after migration
+   - activate .venv
+   - run a dry red-team command
+   - confirm the paper files and experiment docs are present
+
+Short version: the repo itself is ready to move. The only real migration risks are secrets, local result folders, and machine-level dependencies.
+```
+
+**User**
+
+```text
+ok
+```
+
+**Assistant**
+
+```text
+Good. The repo is in a stable state to move.
+
+Most important files to re-check after migration:
+- paper/main.tex
+- paper/experiment_catalog.md
+- paper/cohere_disclosure_draft.md
+- experiments/README.md
+
+First commands on the new machine:
+cd /path/to/alignquant/experiments
+./setup_env.sh
+source .venv/bin/activate
+
+Then restore .env manually and run one smoke test.
+```
+
+**User**
+
+```text
+save this too
+```
