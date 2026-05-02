@@ -150,6 +150,17 @@ python redteam_multiturn_canary.py \
   --env-path .env
 ```
 
+Repeat-run stability probes for the strongest retrieved-context prompt
+families, including negative controls:
+```bash
+python redteam_repeat_stability.py \
+  --models command-r7b-12-2024 \
+  --repeats 20 \
+  --out-dir results/redteam_repeat_stability_r7b \
+  --paper-md ../paper/redteam_repeat_stability_results.md \
+  --env-path .env
+```
+
 Offline rescoring for exact, normalized, partial, and encoded canary leakage:
 ```bash
 python score_redteam_responses.py \

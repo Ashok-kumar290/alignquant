@@ -14,8 +14,9 @@ quantization study.
 | 3 | System-context canary rotation | Strong replication evidence against one-off artifacts | High |
 | 4 | System-context multi-turn extraction | Shows staged conversational leakage pressure | High |
 | 5 | Broad behavioral red-team harness | Baseline refusal / safety context around the leakage findings | Medium |
-| 6 | Human-audit sampling and proof bundle | Vendor-facing evidence and paper appendix support | High |
-| 7 | TruthfulQA activation geometry pilot | Future open-weight quantization/mechanistic work | Medium, blocked by GPU |
+| 6 | Repeat-run stability on top prompts | Shows whether the strongest failures persist across repeated identical runs | High |
+| 7 | Human-audit sampling and proof bundle | Vendor-facing evidence and paper appendix support | High |
+| 8 | TruthfulQA activation geometry pilot | Future open-weight quantization/mechanistic work | Medium, blocked by GPU |
 
 ## 2. Headline experiments
 
@@ -149,7 +150,20 @@ python redteam_multiturn_canary.py \
 
 ## 3. Core support experiments and utilities
 
-### 3.1 Broad behavioral red-team harness
+### 3.1 Repeat-run stability on top prompts
+
+**Script**
+- `experiments/redteam_repeat_stability.py`
+
+**Purpose**
+- Repeats the strongest retrieved-context prompts against the same model to
+  distinguish stable failure modes from one-off artifacts.
+- Includes both top leak probes and negative controls.
+
+**Best use**
+- Minimal vendor reproduction and stability evidence.
+
+### 3.2 Broad behavioral red-team harness
 
 **Script**
 - `experiments/redteam_behavior.py`
@@ -182,7 +196,7 @@ python redteam_behavior.py \
 **Best use**
 - Provides the baseline safety story around the narrower leakage findings.
 
-### 3.2 Offline scoring
+### 3.3 Offline scoring
 
 **Script**
 - `experiments/score_redteam_responses.py`
@@ -194,7 +208,7 @@ python redteam_behavior.py \
 **Best use**
 - Required for consistent cross-run summaries and later confidence intervals.
 
-### 3.3 Confidence intervals
+### 3.4 Confidence intervals
 
 **Script**
 - `experiments/redteam_confidence_intervals.py`
@@ -205,7 +219,7 @@ python redteam_behavior.py \
 **Best use**
 - Turns a pilot into statistically legible evidence.
 
-### 3.4 Vendor proof bundle
+### 3.5 Vendor proof bundle
 
 **Script**
 - `experiments/redteam_proof_bundle.py`
@@ -216,7 +230,7 @@ python redteam_behavior.py \
 **Best use**
 - Vendor reporting and evidence appendix.
 
-### 3.5 Human audit sampling
+### 3.6 Human audit sampling
 
 **Script**
 - `experiments/sample_redteam_audit.py`
@@ -227,7 +241,7 @@ python redteam_behavior.py \
 **Best use**
 - Reduces overreliance on rule-based scoring.
 
-### 3.6 Summary table generation
+### 3.7 Summary table generation
 
 **Script**
 - `experiments/generate_redteam_tables.py`
@@ -280,13 +294,16 @@ python truthfulqa_activation_report.py \
 | --- | --- |
 | Retrieved-context single-turn leakage | `paper/redteam_tool_context_canary_results.md` |
 | Clean two-turn tool-chain exfiltration | `paper/redteam_toolchain_exfiltration_clean_results.md` |
+| Repeat-run stability | `paper/redteam_repeat_stability_results.md` |
 | Tool-chain confidence intervals | `paper/redteam_toolchain_statistical_evidence.md` |
 | Tool-chain appendix | `paper/redteam_toolchain_appendix.md` |
 | System-context canary rotation | `paper/redteam_canary_rotation_results.md` |
 | System-context multi-turn extraction | `paper/redteam_multiturn_canary_results.md` |
 | Cross-model comparison | `paper/cohere_model_comparison.md` |
 | Vendor disclosure draft | `paper/cohere_disclosure_draft.md` |
+| Vendor repro bundle | `paper/cohere_repro_bundle.md` |
 | Vendor vulnerability list | `paper/cohere_vulnerability_list.md` |
+| Human audit protocol | `paper/human_audit_protocol.md` |
 | Consolidated evidence dossier | `paper/redteam_evidence_dossier.md` |
 | Current paper draft | `paper/main.tex` |
 

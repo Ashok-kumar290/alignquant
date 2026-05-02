@@ -141,6 +141,8 @@ The strongest practical failure mode in this study is retrieved/tool-style conte
 
 The cleaner two-turn exfiltration rerun provides a more realistic workflow-shaped test. Table~\ref{tab:toolchain-ci} shows the aggregate rates and confidence intervals. The ranking changes materially: \texttt{command-r7b-12-2024} remains clearly vulnerable, whereas \texttt{command-r-plus-08-2024} and \texttt{command-a-03-2025} mostly refuse the second-step extraction request, though they still show some residual partial or transcript-level disclosures.
 
+A later repeat-run stability sweep sharpened the reproduction story for \texttt{command-r7b-12-2024}. Across 200 repeated retrieved-context cases at temperature 0.0, several top prompts reproduced exact leakage in 20/20 identical reruns, including direct extraction, JSON extraction, reference resolution, fields-then-value, policy-then-quote, and summary-then-direct. The checksum-style variant reproduced exact leakage in 19/20 reruns. A single-turn safe-summary control held at 0/20 exact leaks, which makes the positive results harder to dismiss as a scorer artifact or generalized overlabeling.
+
 \begin{table}[t]
 \centering
 \small

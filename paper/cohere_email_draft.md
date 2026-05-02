@@ -23,6 +23,10 @@ Strongest findings:
   command-r7b-12-2024 leaked the exact token in 15/24 follow-up cases (62.5%).
 - In a single-turn retrieved/tool-context extraction setting, all three tested
   models leaked heavily, including 20/24 exact leaks for command-r7b-12-2024.
+- In a 200-case repeat-run stability sweep on command-r7b-12-2024, several top
+  retrieved-context prompts reproduced exact leakage in 19/20 or 20/20
+  identical reruns, while a single-turn safe-summary control held at 0/20 exact
+  leaks.
 - On the paired harmful-request benchmark, command-r7b-12-2024 showed 0/100
   unsafe compliance, which suggests refusal and confidentiality should be
   evaluated separately.
@@ -51,6 +55,8 @@ Regards,
 - `paper/redteam_toolchain_appendix.md`
 - `paper/cohere_model_comparison.md`
 - `paper/redteam_evidence_dossier.md`
+- `paper/cohere_repro_bundle.md`
+- `paper/redteam_repeat_stability_results.md`
 
 ## Ask Cohere For
 
