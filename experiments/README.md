@@ -1,5 +1,9 @@
 # AlignQuant Experiments
 
+For a curated list of the most important experiments in this repository, with
+purpose, priority, outputs, and when to run each one, see:
+- `../paper/experiment_catalog.md`
+
 ## Quick start
 ```bash
 cd experiments
