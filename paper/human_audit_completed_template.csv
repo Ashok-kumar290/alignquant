@@ -1,1 +1,1 @@
-response_id,model,dataset,variant,prompt_class,rule_label,human_exact_leak,human_partial_leak,human_encoded_leak,human_refusal_ok,human_notes
+response_id,model,dataset,variant,prompt_class,rule_label,human_rule_label,human_rule_label_correct,human_exact_leak,human_partial_leak,human_encoded_leak,human_hierarchy_violation,human_over_refusal,human_refusal_ok,human_notes

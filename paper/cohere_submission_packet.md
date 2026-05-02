@@ -14,8 +14,10 @@ Send these files in this order:
 5. `paper/redteam_repeat_stability_results.md`
 6. `paper/redteam_toolchain_statistical_evidence.md`
 7. `paper/redteam_toolchain_appendix.md`
-8. `paper/cohere_model_comparison.md`
-9. `paper/redteam_evidence_dossier.md`
+8. `paper/human_audit_summary.md`
+9. `paper/human_audit_completed.csv`
+10. `paper/cohere_model_comparison.md`
+11. `paper/redteam_evidence_dossier.md`
 
 ## 2. What to claim
 
@@ -61,6 +63,12 @@ Do **not** claim:
 - `tool-checksum`: `19/20` exact leaks
 - negative control `tool-safe-summary`: `0/20` exact leaks
 
+### Human-audit support
+- pilot human audit completed on `25` representative cases
+- `10/10` audited exact-leak positives confirmed
+- `1` partial-leak false positive identified
+- `4` over-refusal false positives identified
+
 ### Separation from harmful-request refusal
 - `command-r7b-12-2024`: `0/100` unsafe compliance on the paired harmful-request benchmark
 
@@ -86,6 +94,7 @@ If you want to keep the first email lightweight, attach only these:
 2. `paper/cohere_repro_bundle.md`
 3. `paper/cohere_vulnerability_list.md`
 4. `paper/redteam_repeat_stability_results.md`
+5. `paper/human_audit_summary.md`
 
 Then offer the longer dossier on request.
 
@@ -98,6 +107,8 @@ If you want the first message to be complete, attach all of:
 - `paper/cohere_vulnerability_list.md`
 - `paper/cohere_disclosure_draft.md`
 - `paper/redteam_repeat_stability_results.md`
+- `paper/human_audit_summary.md`
+- `paper/human_audit_completed.csv`
 - `paper/redteam_toolchain_statistical_evidence.md`
 - `paper/redteam_toolchain_appendix.md`
 - `paper/cohere_model_comparison.md`
@@ -123,6 +134,8 @@ Ask them to respond on:
 
 ### Evidence
 - `paper/redteam_repeat_stability_results.md`
+- `paper/human_audit_summary.md`
+- `paper/human_audit_completed.csv`
 - `paper/redteam_toolchain_statistical_evidence.md`
 - `paper/redteam_toolchain_appendix.md`
 - `paper/cohere_model_comparison.md`
@@ -145,4 +158,6 @@ For disclosure quality, this repository is now strong on:
 - negative controls
 
 The biggest remaining upgrade would be a completed human-audited appendix using
-the protocol already included in the repository.
+the protocol already included in the repository. A pilot completed audit is now
+included; the remaining step would be to expand it to a larger appendix-scale
+sample.

@@ -41,6 +41,9 @@ The strongest finding is an application-level confidentiality failure:
   reproduced exact leakage in `20/20` identical reruns; `tool-checksum`
   reproduced exact leakage in `19/20` reruns; a single-turn safe-summary
   negative control held at `0/20` exact leaks.
+- Human audit: a 25-case pilot audit confirmed all 10 audited exact-leak
+  positives and identified one partial-leak false positive plus four
+  over-refusal false positives in weaker scorer-derived labels.
 - Harmful-request compliance on the paired AdvBench run: `0/100`.
 
 This suggests that harmful-request refusal and prompt-context confidentiality

@@ -174,6 +174,8 @@ experiments/.venv/bin/python experiments/redteam_repeat_stability.py \
 - `paper/redteam_toolchain_appendix.md`
 - `paper/redteam_evidence_dossier.md`
 - `paper/redteam_repeat_stability_results.md`
+- `paper/human_audit_summary.md`
+- `paper/human_audit_completed.csv`
 
 ## Why this is a strong vendor-facing package
 

@@ -109,11 +109,14 @@ Every response is scored offline with conservative rule-based checks for:
 We report count-based Wilson intervals for headline rates where appropriate.
 
 \subsection{Audit path}
-The repository now contains a human-audit protocol and completion templates so
-that the strongest exact-leak, partial-leak, refusal, and negative-control
-cases can be reviewed manually. This does not change the current count-based
-results, but it tightens the path from automated evidence to a stronger
-publication appendix and a less contestable vendor packet.
+The repository now contains a human-audit protocol, completion templates, and a
+completed pilot audit over 25 representative cases spanning exact leaks,
+partial leaks, refusals, negative controls, and cross-model edge cases. The
+pilot audit confirmed all 10 audited exact-leak positives, identified one
+partial-leak false positive, and found four over-refusal false positives in the
+boundary-control slice. This does not overturn the core findings; it narrows
+some weaker scorer-derived labels while leaving the strongest exact-leak
+evidence intact.
 
 \section{Results}
 \subsection{Master summary}
@@ -191,13 +194,16 @@ Model & Final exact leak & 95\% CI & Transcript any leak \\
 \subsection{Refusal and confidentiality are separable}
 The paired harmful-request pilot for \texttt{command-r7b-12-2024} produced 0/100 unsafe compliance on the AdvBench slice, while the same model leaked synthetic confidential values repeatedly under multiple context-visible extraction settings. This is the central empirical point of the paper. A model can be strong on harmful-request refusal and still fail badly on application-visible confidentiality.
 
+\subsection{Human audit}
+A 25-case pilot human audit strengthened the evidence package in two ways. First, all 10 audited exact-leak positives were confirmed by manual review across system-context, retrieved-context, staged two-turn, and repeat-stability settings. Second, the audit exposed weaknesses in the rule-based scorer on weaker labels: one partial-leak positive and four over-refusal positives were judged to be false alarms. The resulting picture is narrower and stronger at the same time: the exact confidentiality failures remain intact, while some softer classifier-derived counts should be interpreted more cautiously.
+
 \section{Discussion}
 Three points matter most. First, context type is not a cosmetic detail. The model ranking under one-shot system-context probes is not identical to the ranking under retrieved/tool-context probes or staged two-turn exfiltration. Second, refusal should not be used as a proxy for confidentiality. A refusal-tuned model may still reveal sensitive model-visible state when the prompt is phrased as verification, formatting, transformation, or structured extraction. Third, application developers should treat model-visible secrets as effectively disclosed unless a stronger control exists outside the model itself.
 
 This paper does not argue that Cohere leaked provider-hidden prompts or real customer data. The claim is narrower and still important: natural-language instructions were not a reliable confidentiality control for synthetic secrets deliberately placed in model-visible context. That is enough to matter for retrieval-augmented generation, tool-using agents, and any application that embeds sensitive state in prompts.
 
 \section{Limitations}
-This is an API-only behavioral study. We cannot inspect internal activations, train probes, or measure residual-stream geometry for these hosted models. The secrets are synthetic canaries, not real customer data, and the prompts are controlled adversarial probes rather than organic user traffic. Several experiments remain modest in absolute sample size, even though the repeat-run stability sweep materially improved reproducibility for the strongest retrieved-context cases. The human-audit protocol is included in the repository, but a completed audited appendix is still future work. These limits make the paper weaker as a mechanistic account, but they do not undercut the main behavioral finding.
+This is an API-only behavioral study. We cannot inspect internal activations, train probes, or measure residual-stream geometry for these hosted models. The secrets are synthetic canaries, not real customer data, and the prompts are controlled adversarial probes rather than organic user traffic. Several experiments remain modest in absolute sample size, even though the repeat-run stability sweep materially improved reproducibility for the strongest retrieved-context cases. The completed human audit is still a pilot rather than a full appendix-scale review. These limits make the paper weaker as a mechanistic account, but they do not undercut the main behavioral finding.
 
 \section{Responsible Disclosure}
 The findings in this paper were prepared with responsible disclosure in mind. The accompanying repository now contains a mail-ready disclosure draft, a longer disclosure report, a minimal reproduction bundle, a submission packet, a vulnerability summary, count-based statistical evidence, a cross-model comparison, a repeat-run stability report, a human-audit protocol, and a redacted hashed appendix of representative cases. The intended disclosure claim is narrowly scoped to application-visible confidentiality failures in model-visible context rather than provider-hidden prompt leakage, infrastructure compromise, or real-user-data exposure.

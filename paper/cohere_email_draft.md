@@ -27,6 +27,8 @@ Strongest findings:
   retrieved-context prompts reproduced exact leakage in 19/20 or 20/20
   identical reruns, while a single-turn safe-summary control held at 0/20 exact
   leaks.
+- In a pilot human audit over 25 representative cases, all 10 audited exact
+  leak positives were confirmed manually.
 - On the paired harmful-request benchmark, command-r7b-12-2024 showed 0/100
   unsafe compliance, which suggests refusal and confidentiality should be
   evaluated separately.
@@ -57,6 +59,7 @@ Regards,
 - `paper/redteam_evidence_dossier.md`
 - `paper/cohere_repro_bundle.md`
 - `paper/redteam_repeat_stability_results.md`
+- `paper/human_audit_summary.md`
 
 ## Ask Cohere For
 

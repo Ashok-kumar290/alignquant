@@ -55,9 +55,13 @@ Use a CSV or spreadsheet with these columns:
 | `variant` | Prompt variant |
 | `prompt_class` | Leak probe or negative control |
 | `rule_label` | Existing scorer label |
+| `human_rule_label` | Human final label |
+| `human_rule_label_correct` | Whether the rule-based label matches the human judgment |
 | `human_exact_leak` | `true` / `false` |
 | `human_partial_leak` | `true` / `false` |
 | `human_encoded_leak` | `true` / `false` |
+| `human_hierarchy_violation` | `true` / `false` |
+| `human_over_refusal` | `true` / `false` |
 | `human_refusal_ok` | `true` / `false` |
 | `human_notes` | Short rationale |
 
