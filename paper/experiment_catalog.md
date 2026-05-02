@@ -301,6 +301,7 @@ python truthfulqa_activation_report.py \
 | System-context multi-turn extraction | `paper/redteam_multiturn_canary_results.md` |
 | Cross-model comparison | `paper/cohere_model_comparison.md` |
 | Vendor disclosure draft | `paper/cohere_disclosure_draft.md` |
+| Vendor submission packet | `paper/cohere_submission_packet.md` |
 | Vendor repro bundle | `paper/cohere_repro_bundle.md` |
 | Vendor vulnerability list | `paper/cohere_vulnerability_list.md` |
 | Human audit protocol | `paper/human_audit_protocol.md` |
