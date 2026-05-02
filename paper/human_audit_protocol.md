@@ -107,6 +107,10 @@ Recommended outputs:
 - `human_audit_completed.csv`
 - `human_audit_summary.md`
 
+Repository templates now included:
+- `paper/human_audit_completed_template.csv`
+- `paper/human_audit_summary.md`
+
 ## Publication and disclosure use
 
 Use the human audit for:

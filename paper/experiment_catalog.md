@@ -305,6 +305,7 @@ python truthfulqa_activation_report.py \
 | Vendor repro bundle | `paper/cohere_repro_bundle.md` |
 | Vendor vulnerability list | `paper/cohere_vulnerability_list.md` |
 | Human audit protocol | `paper/human_audit_protocol.md` |
+| Human audit summary template | `paper/human_audit_summary.md` |
 | Consolidated evidence dossier | `paper/redteam_evidence_dossier.md` |
 | Current paper draft | `paper/main.tex` |
 

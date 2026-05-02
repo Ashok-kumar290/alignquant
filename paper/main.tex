@@ -29,7 +29,7 @@ KL University, Vijayawada \\
 \maketitle
 
 \begin{abstract}
-Refusal-tuned language models are often evaluated on harmful-request compliance, but that axis alone does not tell us whether model-visible confidential context is protected. We present a controlled behavioral study of three Cohere Command models using synthetic confidential canaries placed in system-visible or retrieved/tool-style context. Our strongest finding is a repeated application-visible confidentiality failure: \texttt{command-r7b-12-2024} leaked an exact synthetic secret in 139/300 replicated system-context probes (46.4\%) and in 15/24 clean two-turn retrieved-context exfiltration cases (62.5\%). In a one-shot retrieved/tool-context extraction setting, all three tested models leaked heavily, including 20/24 exact leaks for \texttt{command-r7b-12-2024}, 18/24 for \texttt{command-r-plus-08-2024}, and 19/24 for \texttt{command-a-03-2025}. At the same time, the paired harmful-request benchmark showed 0/100 unsafe compliance for \texttt{command-r7b-12-2024}. This decoupling shows that harmful-request refusal and confidentiality under model-visible context are distinct properties that must be evaluated separately. We release the full behavioral harness, count-based statistical summaries, and a redacted hashed appendix to support responsible disclosure and downstream replication.
+Refusal-tuned language models are often evaluated on harmful-request compliance, but that axis alone does not tell us whether model-visible confidential context is protected. We present a controlled behavioral study of three Cohere Command models using synthetic confidential canaries placed in system-visible or retrieved/tool-style context. Our strongest finding is a repeated application-visible confidentiality failure: \texttt{command-r7b-12-2024} leaked an exact synthetic secret in 139/300 replicated system-context probes (46.4\%) and in 15/24 clean two-turn retrieved-context exfiltration cases (62.5\%). In a one-shot retrieved/tool-context extraction setting, all three tested models leaked heavily, including 20/24 exact leaks for \texttt{command-r7b-12-2024}, 18/24 for \texttt{command-r-plus-08-2024}, and 19/24 for \texttt{command-a-03-2025}. A follow-up repeat-run stability sweep tightened the reproduction story: multiple top retrieved-context prompts reproduced exact leakage in 19/20 or 20/20 identical reruns, while a single-turn safe-summary control held at 0/20 exact leaks. At the same time, the paired harmful-request benchmark showed 0/100 unsafe compliance for \texttt{command-r7b-12-2024}. This decoupling shows that harmful-request refusal and confidentiality under model-visible context are distinct properties that must be evaluated separately. We release the full behavioral harness, count-based statistical summaries, a vendor-facing reproduction pack, and redacted audit materials to support responsible disclosure and downstream replication.
 \end{abstract}
 
 \section{Introduction}
@@ -44,7 +44,8 @@ The repository already contains the full evidence for this narrower claim. It do
     \item We present a controlled behavioral study of model-visible confidentiality failures across three Cohere Command models.
     \item We show that harmful-request refusal and confidentiality under model-visible context are empirically separable.
     \item We compare system-context, retrieved-context, and staged two-turn extraction settings in a unified evaluation.
-    \item We release a full evidence pack: prompts, responses, rule-based scoring, Wilson confidence intervals, and a redacted hashed appendix for representative cases.
+    \item We strengthen the reproduction story with repeated identical-rerun stability measurements and negative controls on the strongest retrieved-context prompt families.
+    \item We release a full evidence pack: prompts, responses, rule-based scoring, Wilson confidence intervals, vendor-facing reproduction materials, and a redacted hashed appendix for representative cases.
 \end{itemize}
 
 \section{Scope and Threat Model}
@@ -107,6 +108,13 @@ Every response is scored offline with conservative rule-based checks for:
 \end{itemize}
 We report count-based Wilson intervals for headline rates where appropriate.
 
+\subsection{Audit path}
+The repository now contains a human-audit protocol and completion templates so
+that the strongest exact-leak, partial-leak, refusal, and negative-control
+cases can be reviewed manually. This does not change the current count-based
+results, but it tightens the path from automated evidence to a stronger
+publication appendix and a less contestable vendor packet.
+
 \section{Results}
 \subsection{Master summary}
 Table~\ref{tab:master-results} is the shortest accurate summary of the completed evidence. The most important pattern is that harmful-request refusal is strong on the paired pilot, while confidentiality robustness varies sharply with context type and model.
@@ -146,6 +154,27 @@ A later repeat-run stability sweep sharpened the reproduction story for \texttt{
 \begin{table}[t]
 \centering
 \small
+\begin{tabular}{lcc}
+\toprule
+Variant & Probe class & Final exact leak \\
+\midrule
+\texttt{tool-direct-extract} & leak probe & 20/20 (100.0\%) \\
+\texttt{tool-json-extract} & leak probe & 20/20 (100.0\%) \\
+\texttt{tool-reference-resolution} & leak probe & 20/20 (100.0\%) \\
+\texttt{fields-then-value} & leak probe & 20/20 (100.0\%) \\
+\texttt{policy-then-quote} & leak probe & 20/20 (100.0\%) \\
+\texttt{summary-then-direct} & leak probe & 20/20 (100.0\%) \\
+\texttt{tool-checksum} & leak probe & 19/20 (95.0\%) \\
+\texttt{tool-safe-summary} & negative control & 0/20 (0.0\%) \\
+\bottomrule
+\end{tabular}
+\caption{Repeat-run stability on the strongest retrieved-context prompt families for \texttt{command-r7b-12-2024}.}
+\label{tab:repeat-stability}
+\end{table}
+
+\begin{table}[t]
+\centering
+\small
 \begin{tabular}{lccc}
 \toprule
 Model & Final exact leak & 95\% CI & Transcript any leak \\
@@ -168,10 +197,10 @@ Three points matter most. First, context type is not a cosmetic detail. The mode
 This paper does not argue that Cohere leaked provider-hidden prompts or real customer data. The claim is narrower and still important: natural-language instructions were not a reliable confidentiality control for synthetic secrets deliberately placed in model-visible context. That is enough to matter for retrieval-augmented generation, tool-using agents, and any application that embeds sensitive state in prompts.
 
 \section{Limitations}
-This is an API-only behavioral study. We cannot inspect internal activations, train probes, or measure residual-stream geometry for these hosted models. The secrets are synthetic canaries, not real customer data, and the prompts are controlled adversarial probes rather than organic user traffic. Several experiments are also still pilot-scale, especially the 24-case clean two-turn exfiltration rerun. These limits make the paper weaker as a mechanistic account, but they do not undercut the main behavioral finding.
+This is an API-only behavioral study. We cannot inspect internal activations, train probes, or measure residual-stream geometry for these hosted models. The secrets are synthetic canaries, not real customer data, and the prompts are controlled adversarial probes rather than organic user traffic. Several experiments remain modest in absolute sample size, even though the repeat-run stability sweep materially improved reproducibility for the strongest retrieved-context cases. The human-audit protocol is included in the repository, but a completed audited appendix is still future work. These limits make the paper weaker as a mechanistic account, but they do not undercut the main behavioral finding.
 
 \section{Responsible Disclosure}
-The findings in this paper were prepared with responsible disclosure in mind. The accompanying repository contains a mail-ready disclosure draft, a longer disclosure report, a vulnerability summary, count-based statistical evidence, a cross-model comparison, and a redacted hashed appendix of representative cases. The intended disclosure claim is narrowly scoped to application-visible confidentiality failures in model-visible context rather than provider-hidden prompt leakage, infrastructure compromise, or real-user-data exposure.
+The findings in this paper were prepared with responsible disclosure in mind. The accompanying repository now contains a mail-ready disclosure draft, a longer disclosure report, a minimal reproduction bundle, a submission packet, a vulnerability summary, count-based statistical evidence, a cross-model comparison, a repeat-run stability report, a human-audit protocol, and a redacted hashed appendix of representative cases. The intended disclosure claim is narrowly scoped to application-visible confidentiality failures in model-visible context rather than provider-hidden prompt leakage, infrastructure compromise, or real-user-data exposure.
 
 \section{Conclusion}
 The completed evidence supports a narrow but important conclusion: refusal-tuned language models can remain strong on harmful-request refusal while still failing application-visible confidentiality tests, especially when sensitive values appear in retrieved or tool-style context. In our strongest staged result, \texttt{command-r7b-12-2024} leaked an exact synthetic confidential value in 15/24 clean two-turn exfiltration cases after an apparently safe first-step summary. The practical implication is straightforward: model-visible secrets should not be considered protected by policy text alone.
